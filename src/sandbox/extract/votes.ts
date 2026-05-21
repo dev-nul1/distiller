@@ -1,17 +1,14 @@
 /**
- * Count the number of '+1' stamp nodes stuck to a given node.
+ * Count the number of stamp nodes stuck to a given node.
  *
- * Rationale: FigJam's native Voting Widget stores state in
- * WidgetNode.widgetSyncedState, which is only readable by a plugin whose
- * manifest id matches the widget's own widgetId.  An external plugin cannot
- * access those vote counts.  The stamp-based dot-voting pattern (+1 stamps
- * stuck to stickies) IS readable via node.stuckNodes.
+ * Any STAMP — whether the dot-voting '+1', a thumbs-up, fire, or other emoji
+ * stamp — represents a vote or endorsement in a FigJam workshop context.
  *
- * Limitation documented in README.
+ * Note: FigJam's native Voting Widget (WidgetNode) stores vote counts in
+ * widgetSyncedState, which is only readable by the widget's own plugin.
+ * Only stamp-based reactions are accessible here via node.stuckNodes.
  */
 export function countVotes(stuckNodes: readonly SceneNode[]): number {
-  return stuckNodes.filter(
-    (n): n is StampNode => n.type === 'STAMP' && n.name === '+1'
-  ).length
+  return stuckNodes.filter((n): n is StampNode => n.type === 'STAMP').length
 }
 

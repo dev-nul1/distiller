@@ -33,6 +33,7 @@ declare const styles: {
   readonly "text-3xl": string;
   readonly "text-[11px]": string;
   readonly "text-[var(--figma-color-text)]": string;
+  readonly "text-[var(--figma-color-text-secondary)]": string;
   readonly "underline": string;
   readonly "visible": string;
   readonly "w-20": string;

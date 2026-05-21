@@ -271,6 +271,9 @@
   .text-\[var\(--figma-color-text\)\] {
     color: var(--figma-color-text);
   }
+  .text-\[var\(--figma-color-text-secondary\)\] {
+    color: var(--figma-color-text-secondary);
+  }
   .italic {
     font-style: italic;
   }
