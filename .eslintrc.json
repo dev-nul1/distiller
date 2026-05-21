@@ -1,0 +1,5 @@
+{
+  "plugins": ["@figma/figma-plugins"],
+  "extends": ["plugin:@figma/figma-plugins/recommended"],
+  "rules": {}
+}

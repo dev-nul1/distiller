@@ -2,6 +2,7 @@
 
 **Companion to:** `PRD.md`
 **Date:** [05/21/26]
+**API verification:** completed 2026-05-21 – see `API-VERIFICATION.md`
 
 ## Stack
 
@@ -29,8 +30,16 @@ npx --yes create-figma-plugin --template plugin/preact-tailwindcss
 5. No unusual deps
 
 `create-figma-plugin` is the sweet spot. Tailwind via the official template
-gives us layout DX without sacrificing native components. Dark mode handled
-automatically via the `darkMode: ['class', '.figma-dark']` config.
+gives us layout DX without sacrificing native components.
+
+**Tailwind version note (verified 2026-05-21):** The `preact-tailwindcss`
+template ships Tailwind **v4**, not v3. Key differences from v3:
+- Build uses the standalone `@tailwindcss/cli`, not PostCSS.
+- `src/input.css` uses `@import "tailwindcss";` as the entry point.
+- `tailwind.config.js` contains `darkMode: ['class', '.figma-dark']` for
+  Figma theme support, but in v4 the JS config is not auto-loaded. After
+  scaffolding, add `@config "../tailwind.config.js"` to `src/input.css` so the
+  `.figma-dark` dark mode variant is active.
 
 ## Architecture
 
@@ -109,13 +118,17 @@ type ExportItem = {
   id: string
   kind: 'sticky' | 'text' | 'shape' | 'table'
   content: string              // plain text, rich formatting flattened
-  votes?: number               // omitted if zero/unknown
+  votes?: number               // count of '+1' STAMP nodes stuck to this item;
+                               // omitted if zero. NOTE: counts stamp-based votes
+                               // only – FigJam Voting Widget state is not
+                               // accessible to external plugins (verified 2026-05-21)
   position: { x: number; y: number }  // for ordering, dropped before render
   tableData?: TableData        // populated if kind === 'table'
 }
 
 type TableData = {
-  rows: string[][]             // [row][col]
+  rows: string[][]             // [row][col]; merged cells are not exposed by
+                               // the API – treat them as empty strings
   hasHeader: boolean           // best-effort heuristic
 }
 
@@ -132,8 +145,14 @@ type SelectionMode = 'page' | 'section' | 'selection' | 'viewport'
    - `viewport`: filter `currentPage.children` by intersection with
      `figma.viewport.bounds`
 3. **Sandbox traverses** the root set, recursing into sections. For each
-   supported node type, produce an `ExportItem`. Yield to the event loop
-   periodically (every N nodes) to keep the UI responsive on large pages.
+   supported node type, produce an `ExportItem`. Traversal is **synchronous** –
+   `setTimeout` is not available in the sandbox context. For typical FigJam
+   boards this is fast enough without yielding (see Performance section).
+   Use manual recursion on `node.children`, skipping unsupported node types
+   (FRAME, GROUP, CONNECTOR, etc.) for early pruning.
+   Vote counts are derived by counting `STAMP` nodes in a sticky's
+   `stuckNodes` array where `node.name === '+1'`. FigJam Voting Widget vote
+   totals are inaccessible to external plugins.
 4. **Sandbox orders items** within each section using the spatial heuristic
    (see Ordering below).
 5. **Sandbox emits `EXTRACT_COMPLETE`** with the IR.
@@ -227,8 +246,8 @@ figjam-exporter/
     │   │   ├── sticky.ts
     │   │   ├── text.ts
     │   │   ├── shape.ts
-    │   │   ├── table.ts        // pending API verification
-    │   │   └── votes.ts        // pending API verification
+    │   │   ├── table.ts        // TableNode; merged cells → empty string
+    │   │   └── votes.ts        // count '+1' STAMPs in stuckNodes
     │   └── ordering.ts
     ├── ui/
     │   ├── App.tsx
@@ -260,9 +279,15 @@ figjam-exporter/
   "main": "build/main.js",
   "ui": "build/ui.js",
   "editorType": ["figjam"],
+  "documentAccess": "dynamic-page",
   "networkAccess": { "allowedDomains": ["none"] }
 }
 ```
+
+**`documentAccess: "dynamic-page"` is required for all new plugins** (verified
+2026-05-21). Without it, Figma loads every page in the file on first run,
+showing a "Loading n pages..." notification. Since we act only on the current
+page, this field must be present.
 
 No network access. No external services. This should breeze through Figma
 review.
@@ -271,10 +296,14 @@ review.
 
 - FigJam pages can have thousands of nodes. The Plugin API is single-threaded
   against the document.
-- During traversal, yield to the event loop every 100-200 nodes via
-  `await new Promise(r => setTimeout(r, 0))` to keep the UI responsive.
-- Emit `EXTRACT_PROGRESS` periodically so the UI can show a progress bar
-  during large extractions.
+- **`setTimeout` is NOT available in the main sandbox** (verified 2026-05-21).
+  Do not use `await new Promise(r => setTimeout(r, 0))` – it will throw.
+- For typical FigJam boards (~50–200 stickies, 4–8 sections), synchronous
+  manual recursion completes in well under 1 second. No yielding is needed for
+  v1 scope. Emit `EXTRACT_PROGRESS` before and after traversal to keep the UI
+  responsive, but do not attempt mid-traversal yields.
+- Use manual recursion on `node.children` (not `findAll`) so irrelevant branches
+  can be skipped early (e.g., ignore `FRAME`, `GROUP`, `CONNECTOR`, etc.).
 - Renderers run in the UI iframe, off the document thread, so they don't
   affect document responsiveness.
 
