@@ -1,5 +1,7 @@
 export type SelectionMode = 'page' | 'section' | 'selection' | 'viewport'
 
+export type Format = 'plaintext' | 'markdown' | 'llm' | 'csv'
+
 export type ExtractOptions = {
   // reserved for future per-extraction options
 }
