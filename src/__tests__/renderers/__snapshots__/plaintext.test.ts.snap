@@ -1,0 +1,22 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderPlaintext – snapshot (medium fixture) > matches snapshot 1`] = `
+"Went Well
+  - Fast CI pipeline (4 votes)
+  - Great collaboration (3 votes)
+  - Clear sprint goal (1 vote)
+
+To Improve
+  - Too many meetings (5 votes)
+  - Unclear requirements (2 votes)
+  - Flaky tests (1 vote)
+
+  Subgroup
+    - Nested sticky A (2 votes)
+    - Nested sticky B
+
+Action Items
+  - Schedule fewer standups
+  - Write acceptance criteria
+  - Fix flaky test suite"
+`;

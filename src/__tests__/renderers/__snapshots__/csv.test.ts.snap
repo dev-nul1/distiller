@@ -1,0 +1,16 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderCsv – snapshot (medium fixture) > matches snapshot 1`] = `
+"section_path,kind,content,votes,position_x,position_y,cell_ref
+Went Well,sticky,Fast CI pipeline,4,0,0,
+Went Well,sticky,Great collaboration,3,0,0,
+Went Well,sticky,Clear sprint goal,1,0,0,
+To Improve,sticky,Too many meetings,5,0,0,
+To Improve,sticky,Unclear requirements,2,0,0,
+To Improve,sticky,Flaky tests,1,0,0,
+To Improve > Subgroup,sticky,Nested sticky A,2,0,0,
+To Improve > Subgroup,sticky,Nested sticky B,,0,0,
+Action Items,sticky,Schedule fewer standups,,0,0,
+Action Items,sticky,Write acceptance criteria,,0,0,
+Action Items,sticky,Fix flaky test suite,,0,0,"
+`;

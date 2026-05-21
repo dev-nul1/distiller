@@ -172,6 +172,9 @@
   .block {
     display: block;
   }
+  .contents {
+    display: contents;
+  }
   .grid {
     display: grid;
   }
@@ -191,6 +194,9 @@
   .font-bold {
     --tw-font-weight: var(--font-weight-bold);
     font-weight: var(--font-weight-bold);
+  }
+  .italic {
+    font-style: italic;
   }
   .underline {
     text-decoration-line: underline;

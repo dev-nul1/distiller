@@ -38,6 +38,20 @@ export type ExportSection = {
   children: ExportSection[]
 }
 
+export type RenderOpts = {
+  /**
+   * Whether to include vote counts in the output.
+   * Defaults to true when not specified (treat undefined as true).
+   */
+  includeVotes?: boolean
+  /**
+   * CSV only: expand table items into one row per cell (kind=table_cell).
+   * When false, tables are emitted as a single row using the flat content string.
+   * Defaults to true when not specified.
+   */
+  csvExpandTables?: boolean
+}
+
 export type ExportIR = {
   meta: {
     fileName: string

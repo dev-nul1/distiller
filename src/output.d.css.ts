@@ -1,10 +1,12 @@
 declare const styles: {
   readonly "block": string;
+  readonly "contents": string;
   readonly "filter": string;
   readonly "font-bold": string;
   readonly "grid": string;
   readonly "hidden": string;
   readonly "inline": string;
+  readonly "italic": string;
   readonly "sticky": string;
   readonly "table": string;
   readonly "text-3xl": string;
