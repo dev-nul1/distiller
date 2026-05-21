@@ -13,7 +13,8 @@
     "@tailwindcss/cli": ">=4",
     "concurrently": ">=9",
     "tailwindcss": ">=4",
-    "typescript": ">=5"
+    "typescript": ">=5",
+    "vitest": "^3.2.4"
   },
   "scripts": {
     "build": "npm run build:css && npm run build:js",
@@ -21,7 +22,8 @@
     "build:js": "build-figma-plugin --typecheck --minify",
     "watch": "npm run build:css && concurrently npm:watch:css npm:watch:js",
     "watch:css": "npx @tailwindcss/cli --input ./src/input.css --output ./src/output.css --watch",
-    "watch:js": "build-figma-plugin --typecheck --watch"
+    "watch:js": "build-figma-plugin --typecheck --watch",
+    "test": "vitest run"
   },
   "figma-plugin": {
     "editorType": [
@@ -29,7 +31,9 @@
     ],
     "documentAccess": "dynamic-page",
     "networkAccess": {
-      "allowedDomains": ["none"]
+      "allowedDomains": [
+        "none"
+      ]
     },
     "id": "TBD-assigned-at-publish",
     "name": "FigJam Exporter",

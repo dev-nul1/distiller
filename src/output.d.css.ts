@@ -2,6 +2,7 @@ declare const styles: {
   readonly "block": string;
   readonly "filter": string;
   readonly "font-bold": string;
+  readonly "grid": string;
   readonly "hidden": string;
   readonly "inline": string;
   readonly "sticky": string;
