@@ -12,8 +12,15 @@ function headingLevel(depth: number): string {
 }
 
 function voteSuffix(item: ExportItem, opts: RenderOpts): string {
-  if (opts.includeVotes === false || !item.votes) return ''
-  return ` *(${item.votes} ${item.votes === 1 ? 'vote' : 'votes'})*`
+  const parts: string[] = []
+  if (opts.includeVotes !== false && item.votes) {
+    const vStr = `${item.votes} ${item.votes === 1 ? 'vote' : 'votes'}`
+    parts.push(opts.plainMeta ? `(${vStr})` : `*(${vStr})*`)
+  }
+  if (opts.includeAuthors && item.author) {
+    parts.push(opts.plainMeta ? `\u2013 ${item.author}` : `\u2013 *${item.author}*`)
+  }
+  return parts.length ? ' ' + parts.join(' ') : ''
 }
 
 /** Escape pipe characters inside a table cell. */

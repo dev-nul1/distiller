@@ -109,6 +109,7 @@ export function App() {
   const [includeSections, setIncludeSections] = useState(true)
   const [csvExpandTables, setCsvExpandTables] = useState(true)
   const [showPreview, setShowPreview] = useState(false)
+  const [includeAuthors, setIncludeAuthors] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [settingsReady, setSettingsReady] = useState(false)
 
@@ -133,6 +134,7 @@ export function App() {
       setIncludeSections(s.includeSections)
       setCsvExpandTables(s.csvExpandTables)
       setShowPreview(s.showPreview)
+      setIncludeAuthors(s.includeAuthors)
       if (hasSelection) setMode('selection')
       setSettingsReady(true)
       off()
@@ -177,10 +179,10 @@ export function App() {
   useEffect(() => {
     if (!settingsReady) return
     const settings: PluginSettings = {
-      includeVotes, includeSections, csvExpandTables, showPreview,
+      includeVotes, includeSections, csvExpandTables, showPreview, includeAuthors,
     }
     emit<SaveSettingsHandler>('SAVE_SETTINGS', settings)
-  }, [includeVotes, includeSections, csvExpandTables, showPreview, settingsReady])
+  }, [includeVotes, includeSections, csvExpandTables, showPreview, includeAuthors, settingsReady])
 
   // ── auto-extract (debounced, preview-on only) ─────────────────────────────
   //
@@ -219,7 +221,7 @@ export function App() {
       clearTimeout(timer)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, format, includeVotes, includeSections, showPreview, settingsReady, selectionRevision])
+  }, [mode, format, includeVotes, includeSections, includeAuthors, showPreview, settingsReady, selectionRevision])
 
   // ── keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
@@ -243,12 +245,12 @@ export function App() {
   }, [mode, showPreview])   // re-register when mode or showPreview changes so closures are fresh
 
   // ── render ────────────────────────────────────────────────────────────────
-  const opts: RenderOpts = { includeVotes, includeSections, csvExpandTables }
+  const opts: RenderOpts = { includeVotes, includeSections, csvExpandTables, includeAuthors }
 
   const rendered = useMemo(
     () => renderOutput(ir, format, opts),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ir, format, includeVotes, includeSections, csvExpandTables]
+    [ir, format, includeVotes, includeSections, csvExpandTables, includeAuthors]
   )
 
   const isEmpty = ir !== null && countItems(ir) === 0
@@ -330,9 +332,11 @@ export function App() {
         includeVotes={includeVotes}
         includeSections={includeSections}
         csvExpandTables={csvExpandTables}
+        includeAuthors={includeAuthors}
         onIncludeVotesChange={setIncludeVotes}
         onIncludeSectionsChange={setIncludeSections}
         onCsvExpandTablesChange={setCsvExpandTables}
+        onIncludeAuthorsChange={setIncludeAuthors}
       />
 
       {/* Error state */}

@@ -1,8 +1,14 @@
 import type { ExportIR, ExportItem, ExportSection, RenderOpts } from '../../types'
 
 function voteSuffix(item: ExportItem, opts: RenderOpts): string {
-  if (opts.includeVotes === false || !item.votes) return ''
-  return ` (${item.votes} ${item.votes === 1 ? 'vote' : 'votes'})`
+  const parts: string[] = []
+  if (opts.includeVotes !== false && item.votes) {
+    parts.push(`(${item.votes} ${item.votes === 1 ? 'vote' : 'votes'})`)
+  }
+  if (opts.includeAuthors && item.author) {
+    parts.push(`[${item.author}]`)
+  }
+  return parts.length ? ' ' + parts.join(' ') : ''
 }
 
 function renderItems(

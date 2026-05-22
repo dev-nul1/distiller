@@ -20,6 +20,12 @@ export type ExportItem = {
   content: string
   /** count of '+1' STAMP nodes stuck to this item; omitted when zero */
   votes?: number
+  /**
+   * Display name of the sticky's author. Only present when the author has
+   * enabled visibility on their sticky (node.authorVisible === true).
+   * Only stickies carry this field; other node types do not expose authorship.
+   */
+  author?: string
   /** canvas position – used for ordering, dropped before render */
   position: { x: number; y: number }
   /** populated when kind === 'table' */
@@ -58,6 +64,19 @@ export type RenderOpts = {
    * Defaults to true when not specified.
    */
   includeSections?: boolean
+  /**
+   * Whether to include sticky note author names in the output.
+   * Opt-in (defaults to false/undefined). Only stickies whose authorVisible
+   * flag is true in Figma will have an author to display.
+   */
+  includeAuthors?: boolean
+  /**
+   * Internal: when true, vote counts and author names are emitted as plain
+   * text (e.g. "(3 votes)") rather than markdown italics ("*(3 votes)*").
+   * Set by the LLM renderer when calling renderMarkdown for its body.
+   * Not persisted or exposed in the UI.
+   */
+  plainMeta?: boolean
 }
 
 /** Persisted user preferences stored in figma.clientStorage. */
@@ -66,6 +85,7 @@ export type PluginSettings = {
   includeSections: boolean
   csvExpandTables: boolean
   showPreview: boolean
+  includeAuthors: boolean
 }
 
 export type ExportIR = {

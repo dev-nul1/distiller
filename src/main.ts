@@ -25,6 +25,7 @@ const DEFAULT_SETTINGS: PluginSettings = {
   includeSections: true,
   csvExpandTables: true,
   showPreview: false,
+  includeAuthors: false,
 }
 
 export default function (): void {

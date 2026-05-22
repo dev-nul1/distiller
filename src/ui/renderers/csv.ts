@@ -1,6 +1,11 @@
 import type { ExportIR, ExportItem, ExportSection, RenderOpts } from '../../types'
 
-const HEADER = 'section_path,kind,content,votes,position_x,position_y,cell_ref'
+function csvHeader(opts: RenderOpts): string {
+  const cols = ['section_path', 'kind', 'content', 'votes']
+  if (opts.includeAuthors) cols.push('author')
+  cols.push('position_x', 'position_y', 'cell_ref')
+  return cols.join(',')
+}
 
 /** Wrap a field in double-quotes and escape inner quotes if required. */
 function csvField(value: string): string {
@@ -13,19 +18,24 @@ function csvField(value: string): string {
 function itemRow(
   sectionPath: string,
   item: ExportItem,
+  opts: RenderOpts,
   kindOverride?: string,
   contentOverride?: string,
   cellRef?: string
 ): string {
-  return [
+  const cols = [
     csvField(sectionPath),
     csvField(kindOverride ?? item.kind),
     csvField(contentOverride ?? item.content),
     item.votes ? String(item.votes) : '',
+  ]
+  if (opts.includeAuthors) cols.push(csvField(item.author ?? ''))
+  cols.push(
     String(item.position.x),
     String(item.position.y),
     csvField(cellRef ?? ''),
-  ].join(',')
+  )
+  return cols.join(',')
 }
 
 function collectItemRows(
@@ -47,6 +57,7 @@ function collectItemRows(
           itemRow(
             sectionPath,
             item,
+            opts,
             'table_cell',
             rows[r][c],
             `R${r + 1}C${c + 1}`
@@ -55,7 +66,7 @@ function collectItemRows(
       }
     }
   } else {
-    out.push(itemRow(sectionPath, item))
+    out.push(itemRow(sectionPath, item, opts))
   }
 }
 
@@ -82,7 +93,7 @@ function flattenSection(section: ExportSection): ExportItem[] {
 }
 
 export function renderCsv(ir: ExportIR, opts: RenderOpts): string {
-  const rows: string[] = [HEADER]
+  const rows: string[] = [csvHeader(opts)]
 
   if (opts.includeSections === false) {
     const all = [...ir.orphans, ...ir.sections.flatMap(flattenSection)]

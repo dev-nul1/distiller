@@ -5,7 +5,7 @@ import type { SelectionMode } from '../../types'
 
 const OPTIONS: DropdownOption[] = [
   { value: 'page',      text: 'Whole page' },
-  { value: 'section',   text: 'Selected sections' },
+  // { value: 'section', text: 'Selected sections' }, // superset of 'selection'; hidden until a distinct use-case justifies it
   { value: 'selection', text: 'Current selection' },
   { value: 'viewport',  text: 'Current viewport' },
 ]
