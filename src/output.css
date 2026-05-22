@@ -236,6 +236,9 @@
   .h-64 {
     height: calc(var(--spacing) * 64);
   }
+  .h-\[6px\] {
+    height: 6px;
+  }
   .h-screen {
     height: 100vh;
   }
@@ -247,6 +250,9 @@
   }
   .w-20 {
     width: calc(var(--spacing) * 20);
+  }
+  .w-\[6px\] {
+    width: 6px;
   }
   .w-full {
     width: 100%;
@@ -263,8 +269,17 @@
   .flex-shrink-0 {
     flex-shrink: 0;
   }
+  .shrink {
+    flex-shrink: 1;
+  }
   .shrink-0 {
     flex-shrink: 0;
+  }
+  .flex-grow {
+    flex-grow: 1;
+  }
+  .grow {
+    flex-grow: 1;
   }
   .border-collapse {
     border-collapse: collapse;
@@ -320,6 +335,12 @@
   .gap-\[3px\] {
     gap: 3px;
   }
+  .gap-\[5px\] {
+    gap: 5px;
+  }
+  .overflow-hidden {
+    overflow: hidden;
+  }
   .overflow-y-auto {
     overflow-y: auto;
   }
@@ -332,12 +353,22 @@
   .rounded-\[3px\] {
     border-radius: 3px;
   }
+  .rounded-full {
+    border-radius: calc(infinity * 1px);
+  }
   .border {
     border-style: var(--tw-border-style);
     border-width: 1px;
   }
+  .border-b {
+    border-bottom-style: var(--tw-border-style);
+    border-bottom-width: 1px;
+  }
   .border-\[var\(--figma-color-border\)\] {
     border-color: var(--figma-color-border);
+  }
+  .bg-\[\#1a7a50\] {
+    background-color: #1a7a50;
   }
   .bg-\[var\(--figma-color-bg-secondary\)\] {
     background-color: var(--figma-color-bg-secondary);
@@ -380,6 +411,9 @@
   }
   .py-\[2px\] {
     padding-block: 2px;
+  }
+  .py-\[3px\] {
+    padding-block: 3px;
   }
   .pt-1 {
     padding-top: calc(var(--spacing) * 1);
@@ -454,6 +488,9 @@
   }
   .underline {
     text-decoration-line: underline;
+  }
+  .opacity-80 {
+    opacity: 80%;
   }
   .outline {
     outline-style: var(--tw-outline-style);

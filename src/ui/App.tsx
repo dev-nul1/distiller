@@ -10,6 +10,7 @@ import type {
   NodeCountRequestHandler,
   NodeCountResponseHandler,
   PageChangedHandler,
+  ResizeWindowHandler,
   SaveSettingsHandler,
   SelectionChangedHandler,
   SettingsLoadedHandler,
@@ -134,27 +135,26 @@ const AUTO_EXTRACT_DEBOUNCE_MS = 300
  */
 const AUTO_EXTRACT_NODE_THRESHOLD = 2000
 
-// ─── component ─────────────────────────────────────────────────────────────
-//
-// TODO (future): auto-resize the plugin window to fit content.
-// @create-figma-plugin/ui exports `useWindowResize` which:
-//   - renders a drag handle in the webview so users can resize manually
-//   - returns `setWindowSize({ width, height })` for programmatic resize
-// Pair it with a `ResizeObserver` on `document.body`:
-//   const setWindowSize = useWindowResize(
-//     ({ width, height }) => emit<ResizeWindowHandler>('RESIZE_WINDOW', { width, height }),
-//     { minHeight: 380, maxHeight: 720, resizeDirection: 'vertical' }  // width stays fixed
-//   )
-//   useEffect(() => {
-//     const ro = new ResizeObserver(() =>
-//       setWindowSize({ height: document.body.scrollHeight })
-//     )
-//     ro.observe(document.body)
-//     return () => ro.disconnect()
-//   }, [setWindowSize])
-// Also needs: ResizeWindowHandler in events.ts +
-//   on('RESIZE_WINDOW', ({w,h}) => figma.ui.resize(w,h)) in main.ts.
-// Width stays fixed at 400 — only height resize is desirable here.
+/** Fixed panel width — Figma plugin width never changes. */
+const PANEL_WIDTH = 400
+
+/**
+ * Window height when the preview is visible. The preview text area fills
+ * the space between the result header and the sticky footer.
+ */
+const EXPANDED_HEIGHT = 640
+
+/**
+ * Floor for window height in compact (preview-off) mode so the window never
+ * becomes awkwardly tiny even on the minimal idle state.
+ */
+const COMPACT_MIN_HEIGHT = 200
+
+/**
+ * Ceiling for compact-mode window height (safety clamp; in practice the
+ * measured content height stays well below this).
+ */
+const COMPACT_MAX_HEIGHT = 480
 
 export function App() {
   // ── core state ────────────────────────────────────────────────────────────
@@ -173,6 +173,8 @@ export function App() {
   /** Text currently shown in the overlaid success toast. Null = hidden. */
   const [toastText, setToastText] = useState<string | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** Ref on the root element; used to measure compact content height for window resize. */
+  const containerRef = useRef<HTMLDivElement>(null)
   /** True when auto-extract was skipped because the node count exceeds AUTO_EXTRACT_NODE_THRESHOLD. */
   const [isBoardTooLarge, setIsBoardTooLarge] = useState(false)
   /**
@@ -313,7 +315,6 @@ export function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, showPreview])   // re-register when mode or showPreview changes so closures are fresh
 
-  // ── render ────────────────────────────────────────────────────────────────
   const opts: RenderOpts = { includeVotes, includeSections, csvExpandTables, includeAuthors }
 
   /**
@@ -329,6 +330,35 @@ export function App() {
     return { kind: 'has-content', ir, rendered: renderOutput(ir, format, opts) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, error, ir, mode, format, includeVotes, includeSections, csvExpandTables, includeAuthors])
+
+  // ── window resize ─────────────────────────────────────────────────────────
+  //
+  // Two-mode approach: EXPANDED_HEIGHT when preview is shown (preview text area
+  // fills available space via flex-1); compact/measured height when preview is
+  // hidden (window hugs its content, no dead gap).
+  //
+  // Compact height is measured from the DOM (containerRef.scrollHeight) so it
+  // automatically accommodates varying result-header heights (pills vs. error
+  // banner) without magic numbers. Debounced 50 ms to absorb rapid state
+  // transitions (e.g. loading → has-content triggering two renders).
+  //
+  // The large-board fallback is treated as compact: the preview text area is
+  // absent, so the window should be small regardless of showPreview.
+  useEffect(() => {
+    if (!settingsReady) return
+    const isExpandedNow = showPreview && !isBoardTooLarge
+    const timer = setTimeout(() => {
+      if (isExpandedNow) {
+        emit<ResizeWindowHandler>('RESIZE_WINDOW', { width: PANEL_WIDTH, height: EXPANDED_HEIGHT })
+      } else {
+        const h = containerRef.current?.scrollHeight ?? COMPACT_MIN_HEIGHT
+        const clamped = Math.max(COMPACT_MIN_HEIGHT, Math.min(COMPACT_MAX_HEIGHT, h))
+        emit<ResizeWindowHandler>('RESIZE_WINDOW', { width: PANEL_WIDTH, height: clamped })
+      }
+    }, 50)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPreview, isBoardTooLarge, liveResult.kind, settingsReady])
 
   // ── preview-on actions (IR already exists from auto-extract) ─────────────
 
@@ -402,15 +432,21 @@ export function App() {
   // preview-on: enabled only when there is real content
   const hasContent = !showPreview || liveResult.kind === 'has-content'
 
-  return (
-    <div class="flex h-screen flex-col">
+  // isExpanded drives both the outer layout class and the resize effect.
+  // The large-board fallback is treated as compact even when showPreview is on,
+  // since the preview text area is absent.
+  const isExpanded = showPreview && !isBoardTooLarge
 
-      {/* ── scrollable content ─────────────────────────────────────────────
-           min-h-0 is required in a flex-column layout: without it the browser
-           sizes this child to fit all its content and overflow-y-auto never
-           activates. flex-1 fills the remaining space above the sticky footer.
+  return (
+    <div ref={containerRef} class={isExpanded ? 'flex h-screen flex-col' : 'flex flex-col'}>
+
+      {/* ── fixed inputs section ───────────────────────────────────────────
+           flex-shrink-0 keeps this section at natural height in expanded mode
+           so the preview text area below can claim the remaining flex-1 space.
+           In compact mode the outer div has no height constraint, so this
+           section determines window height (measured via containerRef).
       ────────────────────────────────────────────────────────────────────── */}
-      <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-4">
+      <div class="flex flex-shrink-0 flex-col gap-3 py-4">
         <ModePicker value={mode} onValueChange={setMode} />
         <FormatPicker value={format} onValueChange={(v) => setFormat(v)} />
 
@@ -443,18 +479,15 @@ export function App() {
           </div>
         </div>
 
-        {/* ── result zone ────────────────────────────────────────────────────
-             Two sibling parts. Show preview gates ONLY the text area; the
-             status header is always mounted so the user can always see why
-             Copy/Download are enabled or disabled.
-        ─────────────────────────────────────────────────────────────────── */}
+        {/* ── result zone header ─────────────────────────────────────────────
+             Always visible, independent of Show preview toggle. Show preview
+             hides ONLY the text area below; the header is a sibling, not a child.
 
-        {/* Status header:
-             idle        → nothing (clean initial load, avoids phantom gap).
+             idle        → hidden (clean initial load, avoids phantom gap).
              loading     → skeleton badge placeholders.
              has-content → stat pills (scope at a glance; visible even preview-off).
-             empty       → quiet muted text — idle is calm, not an alert.
-             error       → Banner + Retry; earns the weight because action is needed. */}
+             empty       → quiet muted text.
+             error       → Banner + Retry; earns the weight because action needed. */}
         {liveResult.kind !== 'idle' && (
           <div class="px-2">
             {liveResult.kind === 'loading' && (
@@ -498,33 +531,50 @@ export function App() {
             )}
           </div>
         )}
+      </div>
 
-        {/* Preview text area — only this part is gated by showPreview */}
-        {showPreview && (
-          isBoardTooLarge ? (
-            <div class="flex flex-col gap-2 px-2">
-              <Banner icon={<IconWarning16 />} variant="warning">
-                Large board — auto-preview skipped. Click to generate once.
-              </Banner>
-              <Button onClick={handleGeneratePreview} secondary fullWidth disabled={loading}>
-                Generate preview
-              </Button>
+      {/* ── preview text area ──────────────────────────────────────────────
+           Only this section is gated by showPreview. flex-1 + min-h-0 lets it
+           fill all remaining space between the inputs section and the footer.
+           The bordered frame with a header strip makes the region intentional.
+
+           Large-board fallback: shown when showPreview is on but the board
+           exceeded the auto-extract threshold. Treated as compact (no flex-1).
+      ────────────────────────────────────────────────────────────────────── */}
+      {showPreview && isBoardTooLarge && (
+        <div class="flex flex-shrink-0 flex-col gap-2 px-2 pb-3">
+          <Banner icon={<IconWarning16 />} variant="warning">
+            Large board — auto-preview skipped. Click to generate once.
+          </Banner>
+          <Button onClick={handleGeneratePreview} secondary fullWidth disabled={loading}>
+            Generate preview
+          </Button>
+        </div>
+      )}
+      {isExpanded && (
+        <div class="flex min-h-0 flex-1 flex-col px-2 pb-3">
+          {/* Bordered preview frame */}
+          <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded border border-[var(--figma-color-border)]">
+            {/* Header strip: "Preview" label left, live indicator right */}
+            <div class="flex flex-shrink-0 items-center border-b border-[var(--figma-color-border)] bg-[var(--figma-color-bg-secondary)] px-2 py-[3px]">
+              <span class="text-[10px] font-medium text-[var(--figma-color-text-secondary)]">Preview</span>
+              <div class="ml-auto flex items-center gap-[5px]">
+                <span class="h-[6px] w-[6px] rounded-full bg-[#1a7a50] opacity-80" />
+                <span class="text-[10px] text-[var(--figma-color-text-secondary)]">Live</span>
+              </div>
             </div>
-          ) : (
+            {/* Preview text fills remaining height */}
             <PreviewPanel
               content={liveResult.kind === 'has-content' ? liveResult.rendered : ''}
               loading={liveResult.kind === 'loading'}
               format={format}
             />
-          )
-        )}
-      </div>
+          </div>
+        </div>
+      )}
 
       {/* ── sticky footer ──────────────────────────────────────────────────
            flex-shrink-0 keeps the footer anchored regardless of content height.
-           Structure: primary action row (Copy / Download) with a secondary-row
-           slot below — gear / settings / attribution will slot in here later
-           without requiring a structural rewrite.
       ────────────────────────────────────────────────────────────────────── */}
       <div class="flex-shrink-0">
         <Divider />
@@ -535,7 +585,6 @@ export function App() {
           loading={loading}
           hasContent={hasContent}
         />
-        {/* secondary-row slot: gear / settings / attribution will go here */}
       </div>
 
       {/* Success toast — fixed overlay; bottom-[60px] clears the ~53 px footer */}

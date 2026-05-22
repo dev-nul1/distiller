@@ -9,6 +9,7 @@ import type {
   NodeCountRequestHandler,
   NodeCountResponseHandler,
   PageChangedHandler,
+  ResizeWindowHandler,
   SaveSettingsHandler,
   SelectionChangedHandler,
   SettingsLoadedHandler,
@@ -71,6 +72,10 @@ export default function (): void {
 
   on<ClosePluginHandler>('CLOSE_PLUGIN', () => {
     figma.closePlugin()
+  })
+
+  on<ResizeWindowHandler>('RESIZE_WINDOW', ({ width, height }) => {
+    figma.ui.resize(width, height)
   })
 
   on<NodeCountRequestHandler>('NODE_COUNT_REQUEST', (mode) => {

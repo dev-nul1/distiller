@@ -45,22 +45,16 @@ type Props = {
 }
 
 export function PreviewPanel({ content, loading, format }: Props) {
-  return (
-    <div class="px-2">
-      {loading ? (
-        <div class="flex h-64 w-full items-center justify-center rounded border border-[var(--figma-color-border)] bg-[var(--figma-color-bg-secondary)]">
-          <div class="flex items-center gap-2 text-[11px] text-[var(--figma-color-text-secondary)]">
-            <LoadingIndicator />
-            <span>Extracting…</span>
-          </div>
-        </div>
-      ) : (
-        <div
-          class="h-64 w-full cursor-text select-text overflow-y-auto rounded border border-[var(--figma-color-border)] bg-[var(--figma-color-bg-secondary)] p-2 font-mono text-[11px] leading-relaxed text-[var(--figma-color-text)] outline-none"
-        >
-          {content ? renderLines(content, format) : null}
-        </div>
-      )}
+  return loading ? (
+    <div class="flex min-h-0 flex-1 items-center justify-center bg-[var(--figma-color-bg-secondary)]">
+      <div class="flex items-center gap-2 text-[11px] text-[var(--figma-color-text-secondary)]">
+        <LoadingIndicator />
+        <span>Extracting…</span>
+      </div>
+    </div>
+  ) : (
+    <div class="min-h-0 flex-1 cursor-text select-text overflow-y-auto bg-[var(--figma-color-bg-secondary)] p-2 font-mono text-[11px] leading-relaxed text-[var(--figma-color-text)] outline-none">
+      {content ? renderLines(content, format) : null}
     </div>
   )
 }

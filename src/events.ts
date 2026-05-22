@@ -80,6 +80,16 @@ export interface NodeCountResponseHandler extends EventHandler {
 }
 
 /**
+ * UI → sandbox: programmatically resize the plugin window.
+ * Triggered by the UI when it needs to grow (preview shown) or shrink (preview
+ * hidden) to fit its content. The sandbox calls figma.ui.resize(width, height).
+ */
+export interface ResizeWindowHandler extends EventHandler {
+  name: 'RESIZE_WINDOW'
+  handler: (size: { width: number; height: number }) => void
+}
+
+/**
  * sandbox → UI: the user navigated to a different FigJam page.
  * The UI uses this to re-trigger auto-extract for 'page' and 'viewport' modes
  * (selection-change events don't fire on page navigation).

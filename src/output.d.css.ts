@@ -1,10 +1,12 @@
 declare const styles: {
   readonly "animate-pulse": string;
+  readonly "bg-[#1a7a50]": string;
   readonly "bg-[var(--figma-color-bg-secondary)]": string;
   readonly "bg-[var(--figma-color-border)]": string;
   readonly "block": string;
   readonly "border": string;
   readonly "border-[var(--figma-color-border)]": string;
+  readonly "border-b": string;
   readonly "border-collapse": string;
   readonly "bottom-[60px]": string;
   readonly "contents": string;
@@ -16,6 +18,7 @@ declare const styles: {
   readonly "flex": string;
   readonly "flex-1": string;
   readonly "flex-col": string;
+  readonly "flex-grow": string;
   readonly "flex-shrink": string;
   readonly "flex-shrink-0": string;
   readonly "flex-wrap": string;
@@ -29,9 +32,12 @@ declare const styles: {
   readonly "gap-3": string;
   readonly "gap-4": string;
   readonly "gap-[3px]": string;
+  readonly "gap-[5px]": string;
   readonly "grid": string;
+  readonly "grow": string;
   readonly "h-40": string;
   readonly "h-64": string;
+  readonly "h-[6px]": string;
   readonly "h-screen": string;
   readonly "hidden": string;
   readonly "inline": string;
@@ -49,8 +55,10 @@ declare const styles: {
   readonly "min-h-0": string;
   readonly "min-w-[196px]": string;
   readonly "ml-auto": string;
+  readonly "opacity-80": string;
   readonly "outline": string;
   readonly "outline-none": string;
+  readonly "overflow-hidden": string;
   readonly "overflow-y-auto": string;
   readonly "p-2": string;
   readonly "p-3": string;
@@ -72,13 +80,16 @@ declare const styles: {
   readonly "py-2": string;
   readonly "py-4": string;
   readonly "py-[2px]": string;
+  readonly "py-[3px]": string;
   readonly "resize": string;
   readonly "resize-none": string;
   readonly "right-[8px]": string;
   readonly "rounded": string;
   readonly "rounded-[2px]": string;
   readonly "rounded-[3px]": string;
+  readonly "rounded-full": string;
   readonly "select-text": string;
+  readonly "shrink": string;
   readonly "shrink-0": string;
   readonly "sticky": string;
   readonly "table": string;
@@ -94,6 +105,7 @@ declare const styles: {
   readonly "uppercase": string;
   readonly "visible": string;
   readonly "w-20": string;
+  readonly "w-[6px]": string;
   readonly "w-full": string;
   readonly "z-40": string;
   readonly "z-50": string;
