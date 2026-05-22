@@ -1,14 +1,19 @@
 import { h } from 'preact'
 import { useEffect, useMemo, useState } from 'preact/hooks'
-import { Banner, Button, Divider, LoadingIndicator } from '@create-figma-plugin/ui'
+import { Banner, Button, Divider, Toggle } from '@create-figma-plugin/ui'
 import { IconApprovedCheckmark16, IconWarning16 } from '@create-figma-plugin/ui'
 import { emit, on } from '@create-figma-plugin/utilities'
 import type { SelectionMode, Format, RenderOpts, PluginSettings } from '../types'
 import type {
   ClosePluginHandler,
   LoadSettingsRequestHandler,
+  NodeCountRequestHandler,
+  NodeCountResponseHandler,
+  PageChangedHandler,
   SaveSettingsHandler,
+  SelectionChangedHandler,
   SettingsLoadedHandler,
+  ViewportChangedHandler,
 } from '../events'
 import { renderPlaintext } from './renderers/plaintext'
 import { renderMarkdown } from './renderers/markdown'
@@ -60,6 +65,18 @@ function safeFilename(ir: Parameters<typeof renderMarkdown>[0], format: Format):
   return `${page}.${fileExtension(format)}`
 }
 
+// ─── constants ─────────────────────────────────────────────────────────────
+
+/** Debounce delay (ms) before triggering auto-extract when inputs change. */
+const AUTO_EXTRACT_DEBOUNCE_MS = 300
+
+/**
+ * If the node count in scope exceeds this threshold, skip auto-extract and
+ * show a manual "Generate preview" prompt instead. Prevents debounced
+ * auto-extract from blocking the single-threaded Plugin API on large boards.
+ */
+const AUTO_EXTRACT_NODE_THRESHOLD = 2000
+
 // ─── component ─────────────────────────────────────────────────────────────
 //
 // TODO (future): auto-resize the plugin window to fit content.
@@ -97,8 +114,16 @@ export function App() {
 
   // ── transient UI state ────────────────────────────────────────────────────
   const [downloadedFile, setDownloadedFile] = useState<string | null>(null)
+  /** True when auto-extract was skipped because the node count exceeds AUTO_EXTRACT_NODE_THRESHOLD. */
+  const [isBoardTooLarge, setIsBoardTooLarge] = useState(false)
+  /**
+   * Incremented by the SELECTION_CHANGED listener so the auto-extract effect
+   * re-runs whenever the canvas selection changes (relevant for 'selection' and
+   * 'section' modes).
+   */
+  const [selectionRevision, setSelectionRevision] = useState(0)
 
-  const { ir, loading, error, progress, extract } = useExtraction()
+  const { ir, loading, error, extract } = useExtraction()
   const { copied, clipError, writeText } = useClipboard()
 
   // ── load settings from clientStorage once on mount ────────────────────────
@@ -116,6 +141,38 @@ export function App() {
     return off
   }, [])
 
+  // ── selection-change listener ─────────────────────────────────────────────
+  // Bump selectionRevision whenever the canvas selection changes. This is a
+  // dep of the auto-extract effect, so changing the selection in Figma
+  // retriggers the debounce (for 'selection' and 'section' modes).
+  useEffect(() => {
+    return on<SelectionChangedHandler>('SELECTION_CHANGED', () => {
+      if (mode === 'selection' || mode === 'section') {
+        setSelectionRevision((r) => r + 1)
+      }
+    })
+  }, [mode])
+  // ── page-change listener ────────────────────────────────────────────────────────
+  // Navigating between FigJam pages does not fire selectionchange, so we
+  // listen for PAGE_CHANGED specifically and bump for the page-scoped modes.
+  useEffect(() => {
+    return on<PageChangedHandler>('PAGE_CHANGED', () => {
+      if (mode === 'page' || mode === 'viewport') {
+        setSelectionRevision((r) => r + 1)
+      }
+    })
+  }, [mode])
+
+  // ── viewport-change listener ──────────────────────────────────────────────────
+  // Emitted by a 500 ms polling loop in main.ts (no native API event exists).
+  // Only reacts when mode is 'viewport'; panning has no effect on other modes.
+  useEffect(() => {
+    return on<ViewportChangedHandler>('VIEWPORT_CHANGED', () => {
+      if (mode === 'viewport') {
+        setSelectionRevision((r) => r + 1)
+      }
+    })
+  }, [mode])
   // ── persist settings whenever they change (after initial load) ────────────
   useEffect(() => {
     if (!settingsReady) return
@@ -125,6 +182,45 @@ export function App() {
     emit<SaveSettingsHandler>('SAVE_SETTINGS', settings)
   }, [includeVotes, includeSections, csvExpandTables, showPreview, settingsReady])
 
+  // ── auto-extract (debounced, preview-on only) ─────────────────────────────
+  //
+  // Fires whenever any extraction input changes while preview is visible.
+  // Before starting extraction, requests a node count from the sandbox; if the
+  // count exceeds AUTO_EXTRACT_NODE_THRESHOLD we show a manual prompt instead
+  // to avoid blocking the single-threaded Plugin API on pathological boards.
+  useEffect(() => {
+    if (!showPreview || !settingsReady) return
+
+    // Reset large-board flag so the preview pane stops showing the manual prompt
+    // while we re-evaluate.
+    setIsBoardTooLarge(false)
+
+    let cancelled = false
+
+    const timer = setTimeout(() => {
+      if (cancelled) return
+
+      const offCount = on<NodeCountResponseHandler>('NODE_COUNT_RESPONSE', (count) => {
+        offCount()
+        if (cancelled) return
+        if (count > AUTO_EXTRACT_NODE_THRESHOLD) {
+          setIsBoardTooLarge(true)
+        } else if (count !== -1) {
+          // count === -1 means resolveRoots threw (e.g. no sections selected);
+          // the extraction itself will surface the error, so skip it silently here.
+          extract(mode)
+        }
+      })
+      emit<NodeCountRequestHandler>('NODE_COUNT_REQUEST', mode)
+    }, AUTO_EXTRACT_DEBOUNCE_MS)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, format, includeVotes, includeSections, showPreview, settingsReady, selectionRevision])
+
   // ── keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -132,7 +228,10 @@ export function App() {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
       if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
         e.preventDefault()
-        handleExtract()
+        // Enter always triggers the primary Copy action.
+        // In preview-on mode: copies the already-extracted output.
+        // In preview-off mode: extracts then copies in one step.
+        handlePrimaryCopy()
       }
       if (e.key === 'Escape') {
         emit<ClosePluginHandler>('CLOSE_PLUGIN')
@@ -141,7 +240,7 @@ export function App() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode])   // re-register when mode changes so handleExtract closure is fresh
+  }, [mode, showPreview])   // re-register when mode or showPreview changes so closures are fresh
 
   // ── render ────────────────────────────────────────────────────────────────
   const opts: RenderOpts = { includeVotes, includeSections, csvExpandTables }
@@ -154,9 +253,7 @@ export function App() {
 
   const isEmpty = ir !== null && countItems(ir) === 0
 
-  function handleExtract() {
-    extract(mode)
-  }
+  // ── preview-on actions (IR already exists from auto-extract) ─────────────
 
   async function handleCopy() {
     if (!ir) return
@@ -177,10 +274,49 @@ export function App() {
     setTimeout(() => setDownloadedFile(null), 2500)
   }
 
-  const progressLabel =
-    progress && progress.total > 0
-      ? `Extracting… ${progress.processed}/${progress.total}`
-      : 'Extracting…'
+  // ── preview-off actions (extract then act in one step) ────────────────────
+
+  function handleCopyAction() {
+    if (loading) return
+    extract(mode, async (freshIr) => {
+      const freshRendered = renderOutput(freshIr, format, opts)
+      await writeText(freshRendered)
+    })
+  }
+
+  function handleDownloadAction() {
+    if (loading) return
+    extract(mode, (freshIr) => {
+      const freshRendered = renderOutput(freshIr, format, opts)
+      const filename = safeFilename(freshIr, format)
+      const blob = new Blob([freshRendered], { type: mimeType(format) })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+      setDownloadedFile(filename)
+      setTimeout(() => setDownloadedFile(null), 2500)
+    })
+  }
+
+  // ── shared primary Copy (used by keyboard shortcut) ───────────────────────
+
+  function handlePrimaryCopy() {
+    if (showPreview) {
+      handleCopy()
+    } else {
+      handleCopyAction()
+    }
+  }
+
+  // ── manual "Generate preview" trigger (large-board guard bypass) ──────────
+
+  function handleGeneratePreview() {
+    setIsBoardTooLarge(false)
+    extract(mode)
+  }
 
   return (
     <div class="flex flex-col gap-3 py-4">
@@ -194,22 +330,10 @@ export function App() {
         includeVotes={includeVotes}
         includeSections={includeSections}
         csvExpandTables={csvExpandTables}
-        showPreview={showPreview}
         onIncludeVotesChange={setIncludeVotes}
         onIncludeSectionsChange={setIncludeSections}
         onCsvExpandTablesChange={setCsvExpandTables}
-        onShowPreviewChange={setShowPreview}
       />
-
-      {/* Progress indicator */}
-      {loading && (
-        <div class="flex items-center gap-2 px-2">
-          <LoadingIndicator />
-          <span class="text-[11px] text-[var(--figma-color-text-secondary)]">
-            {progressLabel}
-          </span>
-        </div>
-      )}
 
       {/* Error state */}
       {!loading && error && (
@@ -217,7 +341,7 @@ export function App() {
           <Banner icon={<IconWarning16 />} variant="warning">
             {error}
           </Banner>
-          <Button onClick={handleExtract} secondary fullWidth>
+          <Button onClick={handlePrimaryCopy} secondary fullWidth>
             Retry
           </Button>
         </div>
@@ -255,17 +379,33 @@ export function App() {
         </div>
       )}
 
-      {/* Preview */}
+      {/* Preview area — toggle is grouped with the pane it controls */}
+      <div class="px-2">
+        <Toggle value={showPreview} onValueChange={setShowPreview}>
+          Show preview
+        </Toggle>
+      </div>
       {showPreview && (
-        <PreviewPanel content={ir ? rendered : ''} ir={ir} />
+        isBoardTooLarge ? (
+          <div class="flex flex-col gap-2 px-2">
+            <Banner icon={<IconWarning16 />} variant="warning">
+              Large board — auto-preview skipped. Click to generate once.
+            </Banner>
+            <Button onClick={handleGeneratePreview} secondary fullWidth disabled={loading}>
+              Generate preview
+            </Button>
+          </div>
+        ) : (
+          <PreviewPanel content={ir ? rendered : ''} ir={ir} loading={loading} format={format} />
+        )
       )}
 
       <div class="flex-1" />
       <Divider />
       <ActionButtons
-        onExtract={handleExtract}
-        onCopy={handleCopy}
-        onDownload={handleDownload}
+        showPreview={showPreview}
+        onCopy={showPreview ? handleCopy : handleCopyAction}
+        onDownload={showPreview ? handleDownload : handleDownloadAction}
         loading={loading}
         hasIR={ir !== null && !isEmpty}
       />

@@ -49,3 +49,49 @@ export interface ClosePluginHandler extends EventHandler {
   handler: () => void
 }
 
+/**
+ * sandbox → UI: the Figma canvas selection changed.
+ * The UI uses this to re-trigger auto-extract when mode is 'selection' or 'section'.
+ */
+export interface SelectionChangedHandler extends EventHandler {
+  name: 'SELECTION_CHANGED'
+  handler: () => void
+}
+
+/** UI → sandbox: lightweight pre-flight count of nodes for a given mode */
+export interface NodeCountRequestHandler extends EventHandler {
+  name: 'NODE_COUNT_REQUEST'
+  handler: (mode: SelectionMode) => void
+}
+
+/**
+ * sandbox → UI: result of a NODE_COUNT_REQUEST.
+ * count is the total number of scene nodes in scope; -1 means resolveRoots threw
+ * (e.g. no sections selected when mode === 'section').
+ */
+export interface NodeCountResponseHandler extends EventHandler {
+  name: 'NODE_COUNT_RESPONSE'
+  handler: (count: number) => void
+}
+
+/**
+ * sandbox → UI: the user navigated to a different FigJam page.
+ * The UI uses this to re-trigger auto-extract for 'page' and 'viewport' modes
+ * (selection-change events don't fire on page navigation).
+ */
+export interface PageChangedHandler extends EventHandler {
+  name: 'PAGE_CHANGED'
+  handler: () => void
+}
+
+/**
+ * sandbox → UI: the visible canvas area changed (pan or zoom).
+ * Emitted by a polling loop in main.ts because the Plugin API has no native
+ * viewport-change event. The UI uses this to re-trigger auto-extract when
+ * mode is 'viewport'.
+ */
+export interface ViewportChangedHandler extends EventHandler {
+  name: 'VIEWPORT_CHANGED'
+  handler: () => void
+}
+

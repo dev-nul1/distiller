@@ -9,11 +9,9 @@ type Props = {
   includeVotes: boolean
   includeSections: boolean
   csvExpandTables: boolean
-  showPreview: boolean
   onIncludeVotesChange: (value: boolean) => void
   onIncludeSectionsChange: (value: boolean) => void
   onCsvExpandTablesChange: (value: boolean) => void
-  onShowPreviewChange: (value: boolean) => void
 }
 
 export function OptionsPanel({
@@ -23,11 +21,9 @@ export function OptionsPanel({
   includeVotes,
   includeSections,
   csvExpandTables,
-  showPreview,
   onIncludeVotesChange,
   onIncludeSectionsChange,
   onCsvExpandTablesChange,
-  onShowPreviewChange,
 }: Props) {
   return (
     <Disclosure title="Options" open={open} onClick={onToggle}>
@@ -43,9 +39,6 @@ export function OptionsPanel({
             Expand tables to rows
           </Toggle>
         )}
-        <Toggle value={showPreview} onValueChange={onShowPreviewChange}>
-          Show preview
-        </Toggle>
       </div>
     </Disclosure>
   )

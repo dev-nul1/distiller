@@ -90,7 +90,7 @@ widgets we don't recognize.
 3. Format picker (4 options).
 4. Optional toggles: include vote counts (auto-on if votes present), include
    section hierarchy (auto-on if sections present).
-5. **Optional preview panel** (off by default, togglable in settings) – shows
+5. **Optional preview panel** (on by default, togglable in settings) – shows
    "47 stickies, 3 sections, 12 votes" plus first 5 items for sanity check.
 6. Primary action button (Copy or Download depending on format), with the
    alternate action as a secondary.

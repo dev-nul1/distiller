@@ -16,8 +16,9 @@ export function useExtraction() {
   const [error, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState<ExtractionProgress | null>(null)
 
-  const extract = useCallback((mode: SelectionMode) => {
+  const extract = useCallback((mode: SelectionMode, onComplete?: (ir: ExportIR) => void) => {
     setLoading(true)
+    setIr(null)       // clear stale IR so buttons disable while extraction runs
     setError(null)
     setProgress(null)
 
@@ -34,6 +35,7 @@ export function useExtraction() {
       on<ExtractCompleteHandler>('EXTRACT_COMPLETE', (result) => {
         setIr(result)
         done()
+        onComplete?.(result)
       })
     )
 
