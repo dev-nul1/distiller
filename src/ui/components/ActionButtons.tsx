@@ -6,15 +6,16 @@ type Props = {
   onCopy: () => void
   onDownload: () => void
   loading: boolean
-  hasIR: boolean
+  /** True when there is real content to act on (or when preview is off). */
+  hasContent: boolean
 }
 
-export function ActionButtons({ showPreview, onCopy, onDownload, loading, hasIR }: Props) {
+export function ActionButtons({ showPreview, onCopy, onDownload, loading, hasContent }: Props) {
   // Only disable Copy when there is genuinely nothing to copy AND we are not
   // loading. Combining loading+disabled on this library's Button renders it grey
   // instead of showing a blue spinner — so never disable while in-flight.
-  const copyDisabled = !loading && showPreview && !hasIR
-  const downDisabled = loading || (showPreview && !hasIR)
+  const copyDisabled = !loading && showPreview && !hasContent
+  const downDisabled = loading || (showPreview && !hasContent)
 
   return (
     <div class="flex gap-2 px-2 pb-2">

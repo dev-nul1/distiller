@@ -6,8 +6,10 @@ declare const styles: {
   readonly "border": string;
   readonly "border-[var(--figma-color-border)]": string;
   readonly "border-collapse": string;
+  readonly "bottom-[60px]": string;
   readonly "contents": string;
   readonly "cursor-text": string;
+  readonly "ease-in": string;
   readonly "filter": string;
   readonly "fixed": string;
   readonly "flex": string;
@@ -20,6 +22,7 @@ declare const styles: {
   readonly "font-mono": string;
   readonly "font-semibold": string;
   readonly "gap-1": string;
+  readonly "gap-1.5": string;
   readonly "gap-2": string;
   readonly "gap-3": string;
   readonly "gap-4": string;
@@ -37,6 +40,8 @@ declare const styles: {
   readonly "justify-center": string;
   readonly "leading-none": string;
   readonly "leading-relaxed": string;
+  readonly "leading-tight": string;
+  readonly "left-[8px]": string;
   readonly "max-h-64": string;
   readonly "outline": string;
   readonly "outline-none": string;
@@ -45,17 +50,21 @@ declare const styles: {
   readonly "p-3": string;
   readonly "pb-2": string;
   readonly "pb-3": string;
+  readonly "pointer-events-none": string;
   readonly "pt-1": string;
   readonly "pulse": string;
   readonly "px-1": string;
   readonly "px-2": string;
+  readonly "px-3": string;
   readonly "px-[6px]": string;
   readonly "py-0": string;
   readonly "py-0.5": string;
+  readonly "py-2": string;
   readonly "py-4": string;
   readonly "py-[2px]": string;
   readonly "resize": string;
   readonly "resize-none": string;
+  readonly "right-[8px]": string;
   readonly "rounded": string;
   readonly "rounded-[2px]": string;
   readonly "rounded-[3px]": string;
@@ -68,11 +77,13 @@ declare const styles: {
   readonly "text-[11px]": string;
   readonly "text-[var(--figma-color-text)]": string;
   readonly "text-[var(--figma-color-text-secondary)]": string;
+  readonly "transform": string;
   readonly "transition": string;
   readonly "underline": string;
   readonly "visible": string;
   readonly "w-20": string;
   readonly "w-full": string;
+  readonly "z-50": string;
 };
 export = styles;
 

@@ -90,16 +90,17 @@ export default function (): void {
     }
   })
 
-  on<ExtractRequestHandler>('EXTRACT_REQUEST', (mode, _options) => {
+  on<ExtractRequestHandler>('EXTRACT_REQUEST', (mode, _options, requestId) => {
     try {
-      emit<ExtractProgressHandler>('EXTRACT_PROGRESS', { processed: 0, total: 0 })
+      emit<ExtractProgressHandler>('EXTRACT_PROGRESS', { processed: 0, total: 0, requestId })
       const roots = resolveRoots(mode)
       const ir = buildIR(roots, mode)
-      emit<ExtractCompleteHandler>('EXTRACT_COMPLETE', ir)
+      emit<ExtractCompleteHandler>('EXTRACT_COMPLETE', ir, requestId)
     } catch (err) {
       emit<ExtractErrorHandler>(
         'EXTRACT_ERROR',
-        err instanceof Error ? err.message : String(err)
+        err instanceof Error ? err.message : String(err),
+        requestId
       )
     }
   })

@@ -1,33 +1,34 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`renderLlm – snapshot (medium fixture) > matches snapshot 1`] = `
-"# FigJam Workshop Export
+"# FigJam Export: Retro Board
 
-This is an export from a FigJam collaborative session. The structure below
-reflects the workshop's organization:
-- Headings are sections the facilitator created
-- Bullet items are sticky notes, text, or labeled shapes
-- Vote counts (when present) indicate participant prioritization
-
-Source: Sprint Retro.fig / Retro Board
+Board: Sprint Retro.fig
 Exported: 2026-05-21T09:00:00.000Z
+Scope: Whole page
+Content: 3 sections, 10 sticky notes, 18 votes
+
+Export settings:
+- Votes: included
+- Section hierarchy: included
+- Author attribution: excluded
 
 ---
 ## Went Well
 
-- Fast CI pipeline *(4 votes)*
-- Great collaboration *(3 votes)*
-- Clear sprint goal *(1 vote)*
+- Fast CI pipeline (4 votes)
+- Great collaboration (3 votes)
+- Clear sprint goal (1 vote)
 
 ## To Improve
 
-- Too many meetings *(5 votes)*
-- Unclear requirements *(2 votes)*
-- Flaky tests *(1 vote)*
+- Too many meetings (5 votes)
+- Unclear requirements (2 votes)
+- Flaky tests (1 vote)
 
 ### Subgroup
 
-- Nested sticky A *(2 votes)*
+- Nested sticky A (2 votes)
 - Nested sticky B
 
 ## Action Items

@@ -13,21 +13,23 @@ import {
 beforeEach(() => resetIds())
 
 describe('renderLlm – preamble', () => {
-  it('starts with # FigJam Workshop Export', () => {
+  it('starts with # FigJam Export: {pageName}', () => {
     const out = renderLlm(emptyIR, {})
-    expect(out).toMatch(/^# FigJam Workshop Export\n/)
+    expect(out).toMatch(/^# FigJam Export: Page 1\n/)
   })
 
-  it('includes the context explanation bullet points', () => {
+  it('includes Board, Exported, Scope, Content, Export settings fields', () => {
     const out = renderLlm(emptyIR, {})
-    expect(out).toContain('- Headings are sections the facilitator created')
-    expect(out).toContain('- Bullet items are sticky notes, text, or labeled shapes')
-    expect(out).toContain('- Vote counts (when present) indicate participant prioritization')
+    expect(out).toContain('Board: Workshop.fig')
+    expect(out).toContain('Scope: Whole page')
+    expect(out).toContain('Content: no items')
+    expect(out).toContain('Export settings:')
   })
 
-  it('includes Source: fileName / pageName from meta', () => {
+  it('includes Board: fileName and page name in the title', () => {
     const out = renderLlm(emptyIR, {})
-    expect(out).toContain('Source: Workshop.fig / Page 1')
+    expect(out).toContain('Board: Workshop.fig')
+    expect(out).toContain('# FigJam Export: Page 1')
   })
 
   it('includes Exported: ISO timestamp from meta', () => {
@@ -53,9 +55,11 @@ describe('renderLlm – markdown body', () => {
     expect(out).toContain('- Hello world')
   })
 
-  it('passes votes through to markdown renderer', () => {
+  it('passes votes through to markdown renderer as plain text (plainMeta mode)', () => {
     const out = renderLlm(votesIR(), {})
-    expect(out).toContain('*(5 votes)*')
+    // LLM renderer uses plainMeta:true — votes appear as plain "(n votes)", not "*(n votes)*"
+    expect(out).toContain('(5 votes)')
+    expect(out).not.toContain('*(5 votes)*')
   })
 
   it('respects includeVotes: false', () => {
