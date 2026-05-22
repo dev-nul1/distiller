@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { Banner, Button, Divider, Toggle } from '@create-figma-plugin/ui'
 import { IconWarning16 } from '@create-figma-plugin/ui'
 import { emit, on } from '@create-figma-plugin/utilities'
-import type { SelectionMode, Format, RenderOpts, PluginSettings, ExportIR } from '../types'
+import type { SelectionMode, Format, RenderOpts, PluginSettings, ExportIR, ExportItem, ExportSection } from '../types'
 import type {
   ClosePluginHandler,
   LoadSettingsRequestHandler,
@@ -91,6 +91,36 @@ const EMPTY_MESSAGES: Record<SelectionMode, string> = {
   selection: 'Nothing selected. Select stickies, text, or sections on the board.',
   section:   'No sections selected. Select one or more sections, then they\'ll appear here.',
 }
+
+// ─── stat helpers (used by the result-zone status header) ──────────────────
+
+function sumVotes(items: ExportItem[]): number {
+  return items.reduce((n, i) => n + (i.votes ?? 0), 0)
+}
+
+function countVotesInIR(ir: ExportIR): number {
+  function walk(sections: ExportSection[]): number {
+    return sections.reduce((n, s) => n + sumVotes(s.items) + walk(s.children), 0)
+  }
+  return sumVotes(ir.orphans) + walk(ir.sections)
+}
+
+type Stat = { value: number; label: string }
+
+function buildStats(ir: ExportIR): Stat[] {
+  const c = ir.meta.counts
+  const votes = countVotesInIR(ir)
+  return [
+    { value: c.sections, label: c.sections === 1 ? 'section' : 'sections' },
+    { value: c.stickies, label: c.stickies === 1 ? 'sticky' : 'stickies' },
+    { value: c.text,     label: 'text' },
+    { value: c.shapes,   label: c.shapes === 1 ? 'shape' : 'shapes' },
+    { value: c.tables,   label: c.tables === 1 ? 'table' : 'tables' },
+    { value: votes,      label: votes === 1 ? 'vote' : 'votes' },
+  ].filter(s => s.value > 0)
+}
+
+const SKELETON_BADGE_WIDTHS = [72, 88, 52, 64]
 
 // ─── constants ─────────────────────────────────────────────────────────────
 
@@ -223,14 +253,14 @@ export function App() {
     emit<SaveSettingsHandler>('SAVE_SETTINGS', settings)
   }, [includeVotes, includeSections, csvExpandTables, showPreview, includeAuthors, settingsReady])
 
-  // ── auto-extract (debounced, preview-on only) ─────────────────────────────
+  // ── auto-extract (debounced) ──────────────────────────────────────────────
   //
-  // Fires whenever any extraction input changes while preview is visible.
-  // Before starting extraction, requests a node count from the sandbox; if the
-  // count exceeds AUTO_EXTRACT_NODE_THRESHOLD we show a manual prompt instead
-  // to avoid blocking the single-threaded Plugin API on pathological boards.
+  // Fires whenever any extraction input changes (mode, format, settings, scope).
+  // Runs regardless of showPreview so the status header always reflects current
+  // scope — previously gated on showPreview, which left the header stale when
+  // preview was off and mode/selection changed.
   useEffect(() => {
-    if (!showPreview || !settingsReady) return
+    if (!settingsReady) return
 
     // Reset large-board flag so the preview pane stops showing the manual prompt
     // while we re-evaluate.
@@ -260,7 +290,7 @@ export function App() {
       clearTimeout(timer)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, format, includeVotes, includeSections, includeAuthors, showPreview, settingsReady, selectionRevision])
+  }, [mode, format, includeVotes, includeSections, includeAuthors, settingsReady, selectionRevision])
 
   // ── keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
@@ -384,27 +414,6 @@ export function App() {
         <ModePicker value={mode} onValueChange={setMode} />
         <FormatPicker value={format} onValueChange={(v) => setFormat(v)} />
 
-        {/* Error state — unexpected failure, warm warning banner + Retry */}
-        {liveResult.kind === 'error' && (
-          <div class="flex flex-col gap-2 px-2">
-            <Banner icon={<IconWarning16 />} variant="warning">
-              {liveResult.message}
-            </Banner>
-            <Button onClick={handlePrimaryCopy} secondary fullWidth>
-              Retry
-            </Button>
-          </div>
-        )}
-
-        {/* Empty state — calm informational message, mode-correct copy */}
-        {liveResult.kind === 'empty' && (
-          <div class="px-2">
-            <div class="rounded-[3px] bg-[var(--figma-color-bg-secondary)] px-3 py-2 text-[11px] text-[var(--figma-color-text-secondary)]">
-              {liveResult.message}
-            </div>
-          </div>
-        )}
-
         {/* Clipboard error — persistent inline warning (rare; clipboard API failure) */}
         {clipError && (
           <div class="px-2">
@@ -433,6 +442,64 @@ export function App() {
             />
           </div>
         </div>
+
+        {/* ── result zone ────────────────────────────────────────────────────
+             Two sibling parts. Show preview gates ONLY the text area; the
+             status header is always mounted so the user can always see why
+             Copy/Download are enabled or disabled.
+        ─────────────────────────────────────────────────────────────────── */}
+
+        {/* Status header:
+             idle        → nothing (clean initial load, avoids phantom gap).
+             loading     → skeleton badge placeholders.
+             has-content → stat pills (scope at a glance; visible even preview-off).
+             empty       → quiet muted text — idle is calm, not an alert.
+             error       → Banner + Retry; earns the weight because action is needed. */}
+        {liveResult.kind !== 'idle' && (
+          <div class="px-2">
+            {liveResult.kind === 'loading' && (
+              <div class="flex flex-wrap gap-1 px-1 py-0.5">
+                {SKELETON_BADGE_WIDTHS.map((w, i) => (
+                  <span
+                    key={i}
+                    class="inline-block animate-pulse rounded-[3px] bg-[var(--figma-color-border)]"
+                    style={{ width: w, height: 18 }}
+                  />
+                ))}
+              </div>
+            )}
+            {liveResult.kind === 'has-content' && (
+              <div class="flex flex-wrap gap-1 px-1 py-0.5">
+                {buildStats(liveResult.ir).map(({ value, label }) => (
+                  <span
+                    key={label}
+                    class="inline-flex items-baseline gap-[3px] rounded-[3px] border border-[var(--figma-color-border)] bg-[var(--figma-color-bg-secondary)] px-[6px] py-[2px] text-[11px] leading-none"
+                  >
+                    <span class="font-semibold text-[var(--figma-color-text)]">{value}</span>
+                    <span class="text-[var(--figma-color-text-secondary)]">{label}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+            {liveResult.kind === 'empty' && (
+              <p class="px-1 py-0.5 text-[11px] text-[var(--figma-color-text-secondary)]">
+                {liveResult.message}
+              </p>
+            )}
+            {liveResult.kind === 'error' && (
+              <div class="flex flex-col gap-2">
+                <Banner icon={<IconWarning16 />} variant="warning">
+                  {liveResult.message}
+                </Banner>
+                <Button onClick={handlePrimaryCopy} secondary fullWidth>
+                  Retry
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Preview text area — only this part is gated by showPreview */}
         {showPreview && (
           isBoardTooLarge ? (
             <div class="flex flex-col gap-2 px-2">
@@ -446,7 +513,6 @@ export function App() {
           ) : (
             <PreviewPanel
               content={liveResult.kind === 'has-content' ? liveResult.rendered : ''}
-              ir={liveResult.kind === 'has-content' ? liveResult.ir : null}
               loading={liveResult.kind === 'loading'}
               format={format}
             />
