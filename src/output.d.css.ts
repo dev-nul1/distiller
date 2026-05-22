@@ -16,6 +16,7 @@ declare const styles: {
   readonly "flex-1": string;
   readonly "flex-col": string;
   readonly "flex-shrink": string;
+  readonly "flex-shrink-0": string;
   readonly "flex-wrap": string;
   readonly "font-bold": string;
   readonly "font-medium": string;
@@ -30,6 +31,7 @@ declare const styles: {
   readonly "grid": string;
   readonly "h-40": string;
   readonly "h-64": string;
+  readonly "h-screen": string;
   readonly "hidden": string;
   readonly "inline": string;
   readonly "inline-block": string;
@@ -43,6 +45,7 @@ declare const styles: {
   readonly "leading-tight": string;
   readonly "left-[8px]": string;
   readonly "max-h-64": string;
+  readonly "min-h-0": string;
   readonly "outline": string;
   readonly "outline-none": string;
   readonly "overflow-y-auto": string;
@@ -52,6 +55,7 @@ declare const styles: {
   readonly "pb-3": string;
   readonly "pointer-events-none": string;
   readonly "pt-1": string;
+  readonly "pt-3": string;
   readonly "pulse": string;
   readonly "px-1": string;
   readonly "px-2": string;

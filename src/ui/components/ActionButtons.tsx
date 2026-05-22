@@ -18,7 +18,7 @@ export function ActionButtons({ showPreview, onCopy, onDownload, loading, hasCon
   const downDisabled = loading || (showPreview && !hasContent)
 
   return (
-    <div class="flex gap-2 px-2 pb-2">
+    <div class="flex gap-2 px-2 pt-3 pb-2">
       <div class="flex-1">
         <Button onClick={onCopy} fullWidth loading={loading} disabled={copyDisabled}>
           Copy

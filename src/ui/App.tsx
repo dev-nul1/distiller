@@ -374,91 +374,107 @@ export function App() {
   const hasContent = !showPreview || liveResult.kind === 'has-content'
 
   return (
-    <div class="flex flex-col gap-3 py-4">
-      <ModePicker value={mode} onValueChange={setMode} />
-      <FormatPicker value={format} onValueChange={(v) => setFormat(v)} />
-      <Divider />
-      <OptionsPanel
-        open={optionsOpen}
-        onToggle={() => setOptionsOpen((o) => !o)}
-        format={format}
-        includeVotes={includeVotes}
-        includeSections={includeSections}
-        csvExpandTables={csvExpandTables}
-        includeAuthors={includeAuthors}
-        onIncludeVotesChange={setIncludeVotes}
-        onIncludeSectionsChange={setIncludeSections}
-        onCsvExpandTablesChange={setCsvExpandTables}
-        onIncludeAuthorsChange={setIncludeAuthors}
-      />
+    <div class="flex h-screen flex-col">
 
-      {/* Error state — unexpected failure, warm warning banner + Retry */}
-      {liveResult.kind === 'error' && (
-        <div class="flex flex-col gap-2 px-2">
-          <Banner icon={<IconWarning16 />} variant="warning">
-            {liveResult.message}
-          </Banner>
-          <Button onClick={handlePrimaryCopy} secondary fullWidth>
-            Retry
-          </Button>
-        </div>
-      )}
+      {/* ── scrollable content ─────────────────────────────────────────────
+           min-h-0 is required in a flex-column layout: without it the browser
+           sizes this child to fit all its content and overflow-y-auto never
+           activates. flex-1 fills the remaining space above the sticky footer.
+      ────────────────────────────────────────────────────────────────────── */}
+      <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-4">
+        <ModePicker value={mode} onValueChange={setMode} />
+        <FormatPicker value={format} onValueChange={(v) => setFormat(v)} />
+        <Divider />
+        <OptionsPanel
+          open={optionsOpen}
+          onToggle={() => setOptionsOpen((o) => !o)}
+          format={format}
+          includeVotes={includeVotes}
+          includeSections={includeSections}
+          csvExpandTables={csvExpandTables}
+          includeAuthors={includeAuthors}
+          onIncludeVotesChange={setIncludeVotes}
+          onIncludeSectionsChange={setIncludeSections}
+          onCsvExpandTablesChange={setCsvExpandTables}
+          onIncludeAuthorsChange={setIncludeAuthors}
+        />
 
-      {/* Empty state — calm informational message, mode-correct copy */}
-      {liveResult.kind === 'empty' && (
-        <div class="px-2">
-          <div class="rounded-[3px] bg-[var(--figma-color-bg-secondary)] px-3 py-2 text-[11px] text-[var(--figma-color-text-secondary)]">
-            {liveResult.message}
-          </div>
-        </div>
-      )}
-
-      {/* Clipboard error — persistent inline warning (rare; clipboard API failure) */}
-      {clipError && (
-        <div class="px-2">
-          <Banner icon={<IconWarning16 />} variant="warning">
-            {clipError}
-          </Banner>
-        </div>
-      )}
-
-      {/* Preview area — toggle is grouped with the pane it controls */}
-      <div class="px-2">
-        <Toggle value={showPreview} onValueChange={setShowPreview}>
-          Show preview
-        </Toggle>
-      </div>
-      {showPreview && (
-        isBoardTooLarge ? (
+        {/* Error state — unexpected failure, warm warning banner + Retry */}
+        {liveResult.kind === 'error' && (
           <div class="flex flex-col gap-2 px-2">
             <Banner icon={<IconWarning16 />} variant="warning">
-              Large board — auto-preview skipped. Click to generate once.
+              {liveResult.message}
             </Banner>
-            <Button onClick={handleGeneratePreview} secondary fullWidth disabled={loading}>
-              Generate preview
+            <Button onClick={handlePrimaryCopy} secondary fullWidth>
+              Retry
             </Button>
           </div>
-        ) : (
-          <PreviewPanel
-            content={liveResult.kind === 'has-content' ? liveResult.rendered : ''}
-            ir={liveResult.kind === 'has-content' ? liveResult.ir : null}
-            loading={liveResult.kind === 'loading'}
-            format={format}
-          />
-        )
-      )}
+        )}
 
-      <div class="flex-1" />
-      <Divider />
-      <ActionButtons
-        showPreview={showPreview}
-        onCopy={showPreview ? handleCopy : handleCopyAction}
-        onDownload={showPreview ? handleDownload : handleDownloadAction}
-        loading={loading}
-        hasContent={hasContent}
-      />
+        {/* Empty state — calm informational message, mode-correct copy */}
+        {liveResult.kind === 'empty' && (
+          <div class="px-2">
+            <div class="rounded-[3px] bg-[var(--figma-color-bg-secondary)] px-3 py-2 text-[11px] text-[var(--figma-color-text-secondary)]">
+              {liveResult.message}
+            </div>
+          </div>
+        )}
 
-      {/* Success toast — overlaid, no layout shift */}
+        {/* Clipboard error — persistent inline warning (rare; clipboard API failure) */}
+        {clipError && (
+          <div class="px-2">
+            <Banner icon={<IconWarning16 />} variant="warning">
+              {clipError}
+            </Banner>
+          </div>
+        )}
+
+        {/* Preview area — toggle is grouped with the pane it controls */}
+        <div class="px-2">
+          <Toggle value={showPreview} onValueChange={setShowPreview}>
+            Show preview
+          </Toggle>
+        </div>
+        {showPreview && (
+          isBoardTooLarge ? (
+            <div class="flex flex-col gap-2 px-2">
+              <Banner icon={<IconWarning16 />} variant="warning">
+                Large board — auto-preview skipped. Click to generate once.
+              </Banner>
+              <Button onClick={handleGeneratePreview} secondary fullWidth disabled={loading}>
+                Generate preview
+              </Button>
+            </div>
+          ) : (
+            <PreviewPanel
+              content={liveResult.kind === 'has-content' ? liveResult.rendered : ''}
+              ir={liveResult.kind === 'has-content' ? liveResult.ir : null}
+              loading={liveResult.kind === 'loading'}
+              format={format}
+            />
+          )
+        )}
+      </div>
+
+      {/* ── sticky footer ──────────────────────────────────────────────────
+           flex-shrink-0 keeps the footer anchored regardless of content height.
+           Structure: primary action row (Copy / Download) with a secondary-row
+           slot below — gear / settings / attribution will slot in here later
+           without requiring a structural rewrite.
+      ────────────────────────────────────────────────────────────────────── */}
+      <div class="flex-shrink-0">
+        <Divider />
+        <ActionButtons
+          showPreview={showPreview}
+          onCopy={showPreview ? handleCopy : handleCopyAction}
+          onDownload={showPreview ? handleDownload : handleDownloadAction}
+          loading={loading}
+          hasContent={hasContent}
+        />
+        {/* secondary-row slot: gear / settings / attribution will go here */}
+      </div>
+
+      {/* Success toast — fixed overlay; bottom-[60px] clears the ~53 px footer */}
       <Toast text={toastText} />
     </div>
   )
