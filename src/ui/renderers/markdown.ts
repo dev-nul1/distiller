@@ -77,7 +77,17 @@ function renderSection(section: ExportSection, opts: RenderOpts): string[] {
   return lines
 }
 
+/** Recursively collect all items from a section tree (depth-first). */
+function flattenSection(section: ExportSection): ExportItem[] {
+  return [...section.items, ...section.children.flatMap(flattenSection)]
+}
+
 export function renderMarkdown(ir: ExportIR, opts: RenderOpts): string {
+  if (opts.includeSections === false) {
+    const all = [...ir.orphans, ...ir.sections.flatMap(flattenSection)]
+    return all.map((item) => renderItem(item, opts)).join('\n').trimEnd()
+  }
+
   const parts: string[] = []
 
   for (const orphan of ir.orphans) {

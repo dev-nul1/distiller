@@ -52,6 +52,20 @@ export type RenderOpts = {
    * Defaults to true when not specified.
    */
   csvExpandTables?: boolean
+  /**
+   * Whether to emit section headings / hierarchy.
+   * When false, all items are rendered as a flat list regardless of nesting.
+   * Defaults to true when not specified.
+   */
+  includeSections?: boolean
+}
+
+/** Persisted user preferences stored in figma.clientStorage. */
+export type PluginSettings = {
+  includeVotes: boolean
+  includeSections: boolean
+  csvExpandTables: boolean
+  showPreview: boolean
 }
 
 export type ExportIR = {

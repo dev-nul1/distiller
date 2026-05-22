@@ -76,8 +76,19 @@ function collectSectionRows(
   }
 }
 
+/** Recursively collect all items from a section tree (depth-first). */
+function flattenSection(section: ExportSection): ExportItem[] {
+  return [...section.items, ...section.children.flatMap(flattenSection)]
+}
+
 export function renderCsv(ir: ExportIR, opts: RenderOpts): string {
   const rows: string[] = [HEADER]
+
+  if (opts.includeSections === false) {
+    const all = [...ir.orphans, ...ir.sections.flatMap(flattenSection)]
+    for (const item of all) collectItemRows(item, '', opts, rows)
+    return rows.join('\n')
+  }
 
   for (const orphan of ir.orphans) {
     collectItemRows(orphan, '', opts, rows)

@@ -1,5 +1,5 @@
 import type { EventHandler } from '@create-figma-plugin/utilities'
-import type { ExportIR, ExtractOptions, SelectionMode } from './types'
+import type { ExportIR, ExtractOptions, PluginSettings, SelectionMode } from './types'
 
 /** UI → sandbox: begin extraction with the given mode and options */
 export interface ExtractRequestHandler extends EventHandler {
@@ -23,5 +23,29 @@ export interface ExtractCompleteHandler extends EventHandler {
 export interface ExtractErrorHandler extends EventHandler {
   name: 'EXTRACT_ERROR'
   handler: (message: string) => void
+}
+
+/** UI → sandbox: request stored settings (sent once on mount) */
+export interface LoadSettingsRequestHandler extends EventHandler {
+  name: 'LOAD_SETTINGS_REQUEST'
+  handler: () => void
+}
+
+/** sandbox → UI: persisted settings + whether the user has a non-empty selection */
+export interface SettingsLoadedHandler extends EventHandler {
+  name: 'SETTINGS_LOADED'
+  handler: (settings: PluginSettings, hasSelection: boolean) => void
+}
+
+/** UI → sandbox: persist updated settings */
+export interface SaveSettingsHandler extends EventHandler {
+  name: 'SAVE_SETTINGS'
+  handler: (settings: PluginSettings) => void
+}
+
+/** UI → sandbox: user dismissed the plugin */
+export interface ClosePluginHandler extends EventHandler {
+  name: 'CLOSE_PLUGIN'
+  handler: () => void
 }
 
