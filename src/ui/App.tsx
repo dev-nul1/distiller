@@ -1,4 +1,4 @@
-import { h } from 'preact'
+import { h, Fragment } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { Banner, Button, Divider, Toggle } from '@create-figma-plugin/ui'
 import { IconWarning16 } from '@create-figma-plugin/ui'
@@ -27,6 +27,7 @@ import { FormatPicker } from './components/FormatPicker'
 import { SettingsPopover } from './components/SettingsPopover'
 import { PreviewPanel } from './components/PreviewPanel'
 import { ActionButtons } from './components/ActionButtons'
+import { AboutView } from './components/AboutView'
 import { Toast } from './components/Toast'
 
 // ─── helpers ───────────────────────────────────────────────────────────────
@@ -160,6 +161,7 @@ export function App() {
   // ── core state ────────────────────────────────────────────────────────────
   const [mode, setMode] = useState<SelectionMode>('page')
   const [format, setFormat] = useState<Format>('markdown')
+  const [view, setView] = useState<'exporter' | 'about'>('exporter')
 
   // ── settings (persisted) ──────────────────────────────────────────────────
   const [includeVotes, setIncludeVotes] = useState(true)
@@ -358,7 +360,7 @@ export function App() {
     }, 50)
     return () => clearTimeout(timer)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showPreview, isBoardTooLarge, liveResult.kind, settingsReady])
+  }, [showPreview, isBoardTooLarge, liveResult.kind, settingsReady, view])
 
   // ── preview-on actions (IR already exists from auto-extract) ─────────────
 
@@ -435,11 +437,16 @@ export function App() {
   // isExpanded drives both the outer layout class and the resize effect.
   // The large-board fallback is treated as compact even when showPreview is on,
   // since the preview text area is absent.
-  const isExpanded = showPreview && !isBoardTooLarge
+  // The About view is always compact — no expanded layout when browsing About.
+  const isExpanded = view === 'exporter' && showPreview && !isBoardTooLarge
 
   return (
     <div ref={containerRef} class={isExpanded ? 'flex h-screen flex-col' : 'flex flex-col'}>
 
+      {view === 'about' ? (
+        <AboutView onBack={() => setView('exporter')} />
+      ) : (
+        <Fragment>
       {/* ── fixed inputs section ───────────────────────────────────────────
            flex-shrink-0 keeps this section at natural height in expanded mode
            so the preview text area below can claim the remaining flex-1 space.
@@ -582,6 +589,7 @@ export function App() {
           showPreview={showPreview}
           onCopy={showPreview ? handleCopy : handleCopyAction}
           onDownload={showPreview ? handleDownload : handleDownloadAction}
+          onOpenAbout={() => setView('about')}
           loading={loading}
           hasContent={hasContent}
         />
@@ -589,6 +597,8 @@ export function App() {
 
       {/* Success toast — fixed overlay; bottom-[60px] clears the ~53 px footer */}
       <Toast text={toastText} />
+        </Fragment>
+      )}
     </div>
   )
 }

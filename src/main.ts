@@ -8,6 +8,7 @@ import type {
   LoadSettingsRequestHandler,
   NodeCountRequestHandler,
   NodeCountResponseHandler,
+  OpenExternalHandler,
   PageChangedHandler,
   ResizeWindowHandler,
   SaveSettingsHandler,
@@ -76,6 +77,10 @@ export default function (): void {
 
   on<ResizeWindowHandler>('RESIZE_WINDOW', ({ width, height }) => {
     figma.ui.resize(width, height)
+  })
+
+  on<OpenExternalHandler>('OPEN_EXTERNAL', (url) => {
+    figma.openExternal(url)
   })
 
   on<NodeCountRequestHandler>('NODE_COUNT_REQUEST', (mode) => {

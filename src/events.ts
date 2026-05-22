@@ -110,3 +110,9 @@ export interface ViewportChangedHandler extends EventHandler {
   handler: () => void
 }
 
+/** UI → sandbox: open a URL in the system default browser */
+export interface OpenExternalHandler extends EventHandler {
+  name: 'OPEN_EXTERNAL'
+  handler: (url: string) => void
+}
+
