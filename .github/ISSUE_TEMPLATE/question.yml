@@ -1,0 +1,30 @@
+name: Question / feedback
+description: Ask for usage help or share general product feedback.
+title: "[Question]: "
+labels:
+  - question
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for similar questions or feedback.
+          required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: What do you need help with?
+      placeholder: I want to understand...
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Share the board type, export format, or workflow details that matter.
+  - type: textarea
+    id: expected-guidance
+    attributes:
+      label: What kind of answer would help?
+      description: Example exports, usage guidance, roadmap clarification, etc.

@@ -1,0 +1,96 @@
+name: Bug report
+description: Report a reproducible problem with the plugin or its exported output.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please include enough detail for someone else to reproduce it without access to your board.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for duplicates.
+          required: true
+        - label: I removed or redacted any sensitive board content, exports, screenshots, or logs.
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version or commit
+      description: If you built locally, include the commit SHA or branch.
+      placeholder: main @ abc1234
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Selection mode
+      options:
+        - Whole page
+        - Selected section(s)
+        - Selected nodes
+        - Current viewport
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: format
+    attributes:
+      label: Export format
+      options:
+        - Plaintext
+        - Markdown
+        - LLM-ready markdown
+        - CSV
+        - Other / not sure
+    validations:
+      required: true
+  - type: textarea
+    id: board-shape
+    attributes:
+      label: Board setup
+      description: Describe the board shape and content involved.
+      placeholder: |
+        Example: 3 sections, about 40 sticky notes, 2 text nodes, 1 table, several +1 stamps.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a FigJam board with...
+        2. Select...
+        3. Run the plugin...
+        4. Choose...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: What happened instead? Include error text if any.
+    validations:
+      required: true
+  - type: textarea
+    id: output-sample
+    attributes:
+      label: Minimal sample output
+      description: Paste the smallest safe excerpt that shows the problem.
+      render: text
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Screenshots, console output, or extra context
+      description: Add any other details that would help reproduce or debug the issue.
