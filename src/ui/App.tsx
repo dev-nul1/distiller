@@ -23,7 +23,7 @@ import { useExtraction } from './hooks/useExtraction'
 import { useClipboard } from './hooks/useClipboard'
 import { ModePicker } from './components/ModePicker'
 import { FormatPicker } from './components/FormatPicker'
-import { OptionsPanel } from './components/OptionsPanel'
+import { SettingsPopover } from './components/SettingsPopover'
 import { PreviewPanel } from './components/PreviewPanel'
 import { ActionButtons } from './components/ActionButtons'
 import { Toast } from './components/Toast'
@@ -137,7 +137,6 @@ export function App() {
   const [csvExpandTables, setCsvExpandTables] = useState(true)
   const [showPreview, setShowPreview] = useState(false)
   const [includeAuthors, setIncludeAuthors] = useState(false)
-  const [optionsOpen, setOptionsOpen] = useState(false)
   const [settingsReady, setSettingsReady] = useState(false)
 
   // ── transient UI state ────────────────────────────────────────────────────
@@ -384,20 +383,6 @@ export function App() {
       <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-4">
         <ModePicker value={mode} onValueChange={setMode} />
         <FormatPicker value={format} onValueChange={(v) => setFormat(v)} />
-        <Divider />
-        <OptionsPanel
-          open={optionsOpen}
-          onToggle={() => setOptionsOpen((o) => !o)}
-          format={format}
-          includeVotes={includeVotes}
-          includeSections={includeSections}
-          csvExpandTables={csvExpandTables}
-          includeAuthors={includeAuthors}
-          onIncludeVotesChange={setIncludeVotes}
-          onIncludeSectionsChange={setIncludeSections}
-          onCsvExpandTablesChange={setCsvExpandTables}
-          onIncludeAuthorsChange={setIncludeAuthors}
-        />
 
         {/* Error state — unexpected failure, warm warning banner + Retry */}
         {liveResult.kind === 'error' && (
@@ -429,11 +414,24 @@ export function App() {
           </div>
         )}
 
-        {/* Preview area — toggle is grouped with the pane it controls */}
-        <div class="px-2">
+        {/* Preview + settings row: Show preview toggle left, Options gear button right */}
+        <div class="flex items-center px-2">
           <Toggle value={showPreview} onValueChange={setShowPreview}>
             Show preview
           </Toggle>
+          <div class="ml-auto pl-2">
+            <SettingsPopover
+              format={format}
+              includeVotes={includeVotes}
+              includeSections={includeSections}
+              csvExpandTables={csvExpandTables}
+              includeAuthors={includeAuthors}
+              onIncludeVotesChange={setIncludeVotes}
+              onIncludeSectionsChange={setIncludeSections}
+              onCsvExpandTablesChange={setCsvExpandTables}
+              onIncludeAuthorsChange={setIncludeAuthors}
+            />
+          </div>
         </div>
         {showPreview && (
           isBoardTooLarge ? (

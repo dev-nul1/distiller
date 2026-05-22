@@ -8,6 +8,7 @@ declare const styles: {
   readonly "border-collapse": string;
   readonly "bottom-[60px]": string;
   readonly "contents": string;
+  readonly "cursor-default": string;
   readonly "cursor-text": string;
   readonly "ease-in": string;
   readonly "filter": string;
@@ -46,6 +47,8 @@ declare const styles: {
   readonly "left-[8px]": string;
   readonly "max-h-64": string;
   readonly "min-h-0": string;
+  readonly "min-w-[196px]": string;
+  readonly "ml-auto": string;
   readonly "outline": string;
   readonly "outline-none": string;
   readonly "overflow-y-auto": string;
@@ -53,8 +56,10 @@ declare const styles: {
   readonly "p-3": string;
   readonly "pb-2": string;
   readonly "pb-3": string;
+  readonly "pl-2": string;
   readonly "pointer-events-none": string;
   readonly "pt-1": string;
+  readonly "pt-2": string;
   readonly "pt-3": string;
   readonly "pulse": string;
   readonly "px-1": string;
@@ -63,6 +68,7 @@ declare const styles: {
   readonly "px-[6px]": string;
   readonly "py-0": string;
   readonly "py-0.5": string;
+  readonly "py-1": string;
   readonly "py-2": string;
   readonly "py-4": string;
   readonly "py-[2px]": string;
@@ -81,12 +87,15 @@ declare const styles: {
   readonly "text-[11px]": string;
   readonly "text-[var(--figma-color-text)]": string;
   readonly "text-[var(--figma-color-text-secondary)]": string;
+  readonly "tracking-wider": string;
   readonly "transform": string;
   readonly "transition": string;
   readonly "underline": string;
+  readonly "uppercase": string;
   readonly "visible": string;
   readonly "w-20": string;
   readonly "w-full": string;
+  readonly "z-40": string;
   readonly "z-50": string;
 };
 export = styles;
