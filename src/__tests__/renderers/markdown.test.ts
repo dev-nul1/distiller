@@ -9,6 +9,15 @@ import {
   tableIR,
   specialCharsIR,
   mediumIR,
+  codeIR,
+  codeNoLangIR,
+  richInlineItem,
+  richLinkItem,
+  richSelfLinkItem,
+  richListItem,
+  richOrderedListItem,
+  richMixedItem,
+  richSectionIR,
   makeIR,
   makeSection,
   makeItem,
@@ -143,5 +152,96 @@ describe('renderMarkdown – special characters', () => {
 describe('renderMarkdown – snapshot (medium fixture)', () => {
   it('matches snapshot', () => {
     expect(renderMarkdown(mediumIR(), { includeVotes: true })).toMatchSnapshot()
+  })
+})
+
+describe('renderMarkdown – rich text inline', () => {
+  it('renders bold as **text**', () => {
+    const ir = makeIR({ orphans: [richInlineItem()] })
+    const out = renderMarkdown(ir, {})
+    expect(out).toContain('**check the docs**')
+  })
+
+  it('renders italic+strikethrough as *~~text~~*', () => {
+    const ir = makeIR({ orphans: [richInlineItem()] })
+    const out = renderMarkdown(ir, {})
+    // italic wraps strikethrough (outer-in order: link → strikethrough → bold/italic)
+    expect(out).toContain('*~~details~~*')
+  })
+
+  it('preserves plain text portions', () => {
+    const ir = makeIR({ orphans: [richInlineItem()] })
+    const out = renderMarkdown(ir, {})
+    expect(out).toContain('Important')
+    expect(out).toContain(': ')
+    expect(out).toContain(' for ')
+  })
+
+  it('adds outer bullet when no list structure', () => {
+    const ir = makeIR({ orphans: [richInlineItem()] })
+    const out = renderMarkdown(ir, {})
+    expect(out).toMatch(/^- /)
+  })
+})
+
+describe('renderMarkdown – rich text links', () => {
+  it('renders hyperlink as [text](url)', () => {
+    const ir = makeIR({ orphans: [richLinkItem()] })
+    const out = renderMarkdown(ir, {})
+    expect(out).toContain('[our site](https://example.com)')
+  })
+
+  it('self-link (href === text) renders as [url](url)', () => {
+    const ir = makeIR({ orphans: [richSelfLinkItem()] })
+    const out = renderMarkdown(ir, {})
+    expect(out).toContain('[https://example.com](https://example.com)')
+  })
+})
+
+describe('renderMarkdown – rich text lists', () => {
+  it('renders unordered list without outer bullet', () => {
+    const ir = makeIR({ orphans: [richListItem()] })
+    const out = renderMarkdown(ir, {})
+    expect(out).toContain('- Idea Alpha')
+    expect(out).toContain('- Idea Beta')
+    expect(out).toContain('- Idea Gamma')
+    // No double bullet (outer '- ' plus inner '- - ')
+    expect(out).not.toContain('- - ')
+  })
+
+  it('renders ordered list with counters', () => {
+    const ir = makeIR({ orphans: [richOrderedListItem()] })
+    const out = renderMarkdown(ir, {})
+    expect(out).toContain('1. First step')
+    expect(out).toContain('2. Second step')
+    expect(out).toContain('3. Third step')
+  })
+
+  it('renders mixed formatting + list', () => {
+    const ir = makeIR({ orphans: [richMixedItem()] })
+    const out = renderMarkdown(ir, {})
+    expect(out).toContain('- Do **this**')
+    expect(out).toContain('- Also do *that*')
+  })
+})
+
+describe('renderMarkdown – code blocks', () => {
+  it('renders a code block as a fenced code block with language', () => {
+    const out = renderMarkdown(codeIR(), {})
+    expect(out).toContain('```typescript')
+    expect(out).toContain('function greet')
+    expect(out).toContain('```')
+  })
+
+  it('renders a PLAINTEXT code block as a fenced block with no language tag', () => {
+    const out = renderMarkdown(codeNoLangIR(), {})
+    expect(out).toMatch(/^```\n/)
+    expect(out).toContain('hello world')
+  })
+})
+
+describe('renderMarkdown – rich section snapshot', () => {
+  it('matches snapshot', () => {
+    expect(renderMarkdown(richSectionIR(), {})).toMatchSnapshot()
   })
 })

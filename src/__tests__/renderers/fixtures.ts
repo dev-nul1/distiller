@@ -2,7 +2,7 @@
  * Shared fixture factories for renderer tests.
  * All factories return plain objects that satisfy the IR types.
  */
-import type { ExportIR, ExportItem, ExportSection, TableData } from '../../types'
+import type { ExportIR, ExportItem, ExportSection, TableData, RichRun } from '../../types'
 
 let nextId = 1
 export function resetIds(): void {
@@ -35,7 +35,7 @@ export function makeMeta(overrides?: Partial<ExportIR['meta']>): ExportIR['meta'
     pageName: 'Page 1',
     extractedAt: '2026-05-21T12:00:00.000Z',
     mode: 'page',
-    counts: { stickies: 0, text: 0, shapes: 0, tables: 0, sections: 0 },
+    counts: { stickies: 0, text: 0, shapes: 0, tables: 0, codes: 0, sections: 0 },
     ...overrides,
   }
 }
@@ -153,7 +153,7 @@ export function mediumIR(): ExportIR {
       fileName: 'Sprint Retro.fig',
       pageName: 'Retro Board',
       extractedAt: '2026-05-21T09:00:00.000Z',
-      counts: { stickies: 10, text: 0, shapes: 0, tables: 0, sections: 3 },
+      counts: { stickies: 10, text: 0, shapes: 0, tables: 0, codes: 0, sections: 3 },
     }),
     sections: [
       makeSection('Went Well', 0, [
@@ -170,6 +170,140 @@ export function mediumIR(): ExportIR {
         makeItem({ content: 'Schedule fewer standups' }),
         makeItem({ content: 'Write acceptance criteria' }),
         makeItem({ content: 'Fix flaky test suite' }),
+      ]),
+    ],
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Rich-text fixtures
+// ---------------------------------------------------------------------------
+
+/**
+ * Item with inline formatting: bold, italic, strikethrough, and a link.
+ * Corresponding plain text: "Important: check the docs for details"
+ */
+export function richInlineItem(): ExportItem {
+  const runs: RichRun[] = [
+    { text: 'Important' },
+    { text: ': ' },
+    { text: 'check the docs', bold: true },
+    { text: ' for ' },
+    { text: 'details', italic: true, strikethrough: true },
+  ]
+  return makeItem({
+    content: 'Important: check the docs for details',
+    richContent: runs,
+  })
+}
+
+/** Item with a hyperlink run. */
+export function richLinkItem(): ExportItem {
+  const runs: RichRun[] = [
+    { text: 'Visit ' },
+    { text: 'our site', href: 'https://example.com' },
+    { text: ' for more.' },
+  ]
+  return makeItem({
+    content: 'Visit our site for more.',
+    richContent: runs,
+  })
+}
+
+/** Item with a link where the display text equals the URL (no duplication in plain). */
+export function richSelfLinkItem(): ExportItem {
+  const runs: RichRun[] = [
+    { text: 'https://example.com', href: 'https://example.com' },
+  ]
+  return makeItem({
+    content: 'https://example.com',
+    richContent: runs,
+  })
+}
+
+/** Item whose content is a bulleted list. */
+export function richListItem(): ExportItem {
+  // Each list item is a separate run ending with \n (or last without).
+  const runs: RichRun[] = [
+    { text: 'Idea Alpha\n', listType: 'UNORDERED' },
+    { text: 'Idea Beta\n', listType: 'UNORDERED' },
+    { text: 'Idea Gamma', listType: 'UNORDERED' },
+  ]
+  return makeItem({
+    content: 'Idea Alpha\nIdea Beta\nIdea Gamma',
+    richContent: runs,
+  })
+}
+
+/** Item with an ordered (numbered) list. */
+export function richOrderedListItem(): ExportItem {
+  const runs: RichRun[] = [
+    { text: 'First step\n', listType: 'ORDERED' },
+    { text: 'Second step\n', listType: 'ORDERED' },
+    { text: 'Third step', listType: 'ORDERED' },
+  ]
+  return makeItem({
+    content: 'First step\nSecond step\nThird step',
+    richContent: runs,
+  })
+}
+
+/** Item with mixed inline formatting AND list structure. */
+export function richMixedItem(): ExportItem {
+  const runs: RichRun[] = [
+    { text: 'Do ', listType: 'UNORDERED' },
+    { text: 'this', bold: true, listType: 'UNORDERED' },
+    { text: '\n', listType: 'UNORDERED' },
+    { text: 'Also do ', listType: 'UNORDERED' },
+    { text: 'that', italic: true, listType: 'UNORDERED' },
+  ]
+  return makeItem({
+    content: 'Do this\nAlso do that',
+    richContent: runs,
+  })
+}
+
+/** IR containing a code block item (TypeScript). */
+export function codeIR(): ExportIR {
+  resetIds()
+  return makeIR({
+    meta: makeMeta({ counts: { stickies: 0, text: 0, shapes: 0, tables: 0, codes: 1, sections: 0 } }),
+    orphans: [
+      makeItem({
+        kind: 'code',
+        content: 'function greet(name: string) {\n  return `Hello, ${name}!`\n}',
+        codeData: {
+          code: 'function greet(name: string) {\n  return `Hello, ${name}!`\n}',
+          language: 'typescript',
+        },
+      }),
+    ],
+  })
+}
+
+/** IR containing a plain (PLAINTEXT) code block — no language tag. */
+export function codeNoLangIR(): ExportIR {
+  resetIds()
+  return makeIR({
+    meta: makeMeta({ counts: { stickies: 0, text: 0, shapes: 0, tables: 0, codes: 1, sections: 0 } }),
+    orphans: [
+      makeItem({
+        kind: 'code',
+        content: 'hello world',
+        codeData: { code: 'hello world' },
+      }),
+    ],
+  })
+}
+
+/** IR with a section containing a sticky with rich text. */
+export function richSectionIR(): ExportIR {
+  resetIds()
+  return makeIR({
+    sections: [
+      makeSection('Ideas', 0, [
+        richInlineItem(),
+        richListItem(),
       ]),
     ],
   })

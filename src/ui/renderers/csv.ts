@@ -1,4 +1,5 @@
 import type { ExportIR, ExportItem, ExportSection, RenderOpts } from '../../types'
+import { renderRichRuns } from './richtext'
 
 function csvHeader(opts: RenderOpts): string {
   const cols = ['section_path', 'kind', 'content', 'votes']
@@ -23,10 +24,22 @@ function itemRow(
   contentOverride?: string,
   cellRef?: string
 ): string {
+  // For rich-content items, flatten to plain text (URLs preserved inline).
+  // For code items, use the raw code. Otherwise fall back to content.
+  let cellContent: string
+  if (contentOverride !== undefined) {
+    cellContent = contentOverride
+  } else if (item.kind === 'code' && item.codeData) {
+    cellContent = item.codeData.code
+  } else if (item.richContent) {
+    cellContent = renderRichRuns(item.richContent, 'plain')
+  } else {
+    cellContent = item.content
+  }
   const cols = [
     csvField(sectionPath),
     csvField(kindOverride ?? item.kind),
-    csvField(contentOverride ?? item.content),
+    csvField(cellContent),
     item.votes ? String(item.votes) : '',
   ]
   if (opts.includeAuthors) cols.push(csvField(item.author ?? ''))

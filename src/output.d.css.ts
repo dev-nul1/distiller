@@ -64,6 +64,7 @@ declare const styles: {
   readonly "leading-relaxed": string;
   readonly "leading-tight": string;
   readonly "left-[8px]": string;
+  readonly "lowercase": string;
   readonly "max-h-64": string;
   readonly "min-h-0": string;
   readonly "min-w-[196px]": string;

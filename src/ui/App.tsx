@@ -47,8 +47,8 @@ function renderOutput(
 }
 
 function countItems(ir: Parameters<typeof renderMarkdown>[0]): number {
-  const { stickies, text, shapes, tables } = ir.meta.counts
-  return stickies + text + shapes + tables
+  const { stickies, text, shapes, tables, codes } = ir.meta.counts
+  return stickies + text + shapes + tables + codes
 }
 
 function fileExtension(format: Format): string {
@@ -118,6 +118,7 @@ function buildStats(ir: ExportIR): Stat[] {
     { value: c.text,     label: 'text' },
     { value: c.shapes,   label: c.shapes === 1 ? 'shape' : 'shapes' },
     { value: c.tables,   label: c.tables === 1 ? 'table' : 'tables' },
+    { value: c.codes,    label: c.codes === 1 ? 'code block' : 'code blocks' },
     { value: votes,      label: votes === 1 ? 'vote' : 'votes' },
   ].filter(s => s.value > 0)
 }

@@ -1,5 +1,6 @@
 import type { ExportItem } from '../../types'
 import { countVotes } from './votes'
+import { extractRichText } from './richtext'
 
 /** Extract an ExportItem from a FigJam sticky note.
  *  Returns null for stickies with no text and no votes.
@@ -13,10 +14,13 @@ export function extractSticky(node: StickyNode): ExportItem | null {
   if (!content && votes === 0) return null
   const bb = node.absoluteBoundingBox
 
+  const richContent = content ? extractRichText(node.text) : null
+
   return {
     id: node.id,
     kind: 'sticky',
     content: content || '(empty)',
+    ...(richContent ? { richContent } : {}),
     ...(votes > 0 ? { votes } : {}),
     ...(node.authorName ? { author: node.authorName.trim().replace(/\s+/g, ' ') } : {}),
     position: { x: bb?.x ?? 0, y: bb?.y ?? 0 },

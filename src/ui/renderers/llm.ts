@@ -29,6 +29,7 @@ export function renderLlm(ir: ExportIR, opts: RenderOpts): string {
   if (counts.text)     countParts.push(`${counts.text} ${counts.text === 1 ? 'text item' : 'text items'}`)
   if (counts.shapes)   countParts.push(`${counts.shapes} ${counts.shapes === 1 ? 'shape' : 'shapes'}`)
   if (counts.tables)   countParts.push(`${counts.tables} ${counts.tables === 1 ? 'table' : 'tables'}`)
+  if (counts.codes)    countParts.push(`${counts.codes} ${counts.codes === 1 ? 'code block' : 'code blocks'}`)
   if (opts.includeVotes !== false) {
     const votes = countVotesInIR(ir)
     if (votes) countParts.push(`${votes} ${votes === 1 ? 'vote' : 'votes'}`)

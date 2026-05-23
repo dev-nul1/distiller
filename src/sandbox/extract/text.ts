@@ -1,4 +1,5 @@
 import type { ExportItem } from '../../types'
+import { extractRichText } from './richtext'
 
 /**
  * Extract an ExportItem from a standalone TEXT node.
@@ -9,10 +10,13 @@ export function extractText(node: TextNode): ExportItem | null {
   if (!content) return null
 
   const bb = node.absoluteBoundingBox
+  const richContent = extractRichText(node)
+
   return {
     id: node.id,
     kind: 'text',
     content,
+    ...(richContent ? { richContent } : {}),
     position: { x: bb?.x ?? 0, y: bb?.y ?? 0 },
   }
 }

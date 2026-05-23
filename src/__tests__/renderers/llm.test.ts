@@ -7,6 +7,10 @@ import {
   nestedSectionsIR,
   votesIR,
   mediumIR,
+  codeIR,
+  codeNoLangIR,
+  richInlineItem,
+  makeIR,
   resetIds,
 } from './fixtures'
 
@@ -78,5 +82,41 @@ describe('renderLlm – markdown body', () => {
 describe('renderLlm – snapshot (medium fixture)', () => {
   it('matches snapshot', () => {
     expect(renderLlm(mediumIR(), { includeVotes: true })).toMatchSnapshot()
+  })
+})
+
+describe('renderLlm – code blocks', () => {
+  it('renders code block as fenced code with language in body', () => {
+    const out = renderLlm(codeIR(), {})
+    expect(out).toContain('```typescript')
+    expect(out).toContain('function greet')
+  })
+
+  it('includes "1 code block" in Content preamble', () => {
+    const out = renderLlm(codeIR(), {})
+    expect(out).toContain('1 code block')
+  })
+
+  it('includes "2 code blocks" (plural) in Content preamble', () => {
+    const twoCodeIR = makeIR({
+      meta: { fileName: 'Test.fig', pageName: 'P', extractedAt: '2026-01-01T00:00:00.000Z', mode: 'page',
+        counts: { stickies: 0, text: 0, shapes: 0, tables: 0, codes: 2, sections: 0 } },
+      orphans: [],
+    })
+    const out = renderLlm(twoCodeIR, {})
+    expect(out).toContain('2 code blocks')
+  })
+
+  it('renders PLAINTEXT code block without language tag in body', () => {
+    const out = renderLlm(codeNoLangIR(), {})
+    expect(out).toMatch(/```\nhello world\n```/)
+  })
+})
+
+describe('renderLlm – rich text', () => {
+  it('renders bold with ** markup in body', () => {
+    const ir = makeIR({ orphans: [richInlineItem()] })
+    const out = renderLlm(ir, {})
+    expect(out).toContain('**check the docs**')
   })
 })

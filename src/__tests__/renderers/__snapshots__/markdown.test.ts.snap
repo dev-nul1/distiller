@@ -1,5 +1,14 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`renderMarkdown – rich section snapshot > matches snapshot 1`] = `
+"## Ideas
+
+- Important: **check the docs** for *~~details~~*
+- Idea Alpha
+- Idea Beta
+- Idea Gamma"
+`;
+
 exports[`renderMarkdown – snapshot (medium fixture) > matches snapshot 1`] = `
 "## Went Well
 

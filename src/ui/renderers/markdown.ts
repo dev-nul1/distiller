@@ -5,6 +5,7 @@ import type {
   RenderOpts,
   TableData,
 } from '../../types'
+import { renderRichRuns, hasListRuns, renderCodeFence } from './richtext'
 
 /** depth 0 → ##, depth 1 → ###, …, capped at ###### */
 function headingLevel(depth: number): string {
@@ -63,7 +64,17 @@ function renderItem(item: ExportItem, opts: RenderOpts): string {
   if (item.kind === 'table' && item.tableData) {
     return renderMarkdownTable(item.tableData)
   }
-  return `- ${item.content}${voteSuffix(item, opts)}`
+  if (item.kind === 'code' && item.codeData) {
+    return renderCodeFence(item.codeData, 'markup')
+  }
+  const suffix = voteSuffix(item, opts)
+  if (item.richContent) {
+    const body = renderRichRuns(item.richContent, 'markup')
+    // When the body already contains list structure, skip the outer '- ' bullet.
+    if (hasListRuns(item.richContent)) return body + suffix
+    return `- ${body}${suffix}`
+  }
+  return `- ${item.content}${suffix}`
 }
 
 function renderSection(section: ExportSection, opts: RenderOpts): string[] {

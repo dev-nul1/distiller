@@ -13,11 +13,53 @@ export type TableData = {
   hasHeader: boolean
 }
 
+/**
+ * One styled run within a rich-text block. Runs map 1:1 to the segments
+ * returned by Figma's getStyledTextSegments API; the text may contain '\n'
+ * for paragraph breaks.
+ *
+ * Known limitations (best-effort extraction):
+ * - Bold: fontWeight >= 700. Medium/Semibold (500–600) are not tagged bold.
+ * - Italic: detected via fontName.style containing "italic" (case-insensitive).
+ * - Underline: captured here but not represented in any output format (text
+ *   preserved intact, decoration silently dropped).
+ * - Color, font size, and mixed-within-word styling have no output representation.
+ * - Partial-word links (link spans that don't align with word boundaries) are
+ *   supported but may look odd in plain text.
+ * - Nested lists (ORDERED inside UNORDERED, etc.) are flattened to a single level.
+ */
+export type RichRun = {
+  /** Raw characters for this run; may contain '\n' paragraph separators. */
+  text: string
+  bold?: boolean
+  italic?: boolean
+  strikethrough?: boolean
+  /** Underline is captured but not emitted in any output format. */
+  underline?: boolean
+  /** URL string when this run is a hyperlink (NODE-type links are excluded). */
+  href?: string
+  /** List paragraph type. Absent (undefined) means a plain paragraph. */
+  listType?: 'ORDERED' | 'UNORDERED'
+}
+
+/** Extracted content from a FigJam CODE_BLOCK node. */
+export type CodeData = {
+  code: string
+  /** Lowercased language string from CodeBlockNode.codeLanguage (e.g. 'typescript', 'python'). */
+  language?: string
+}
+
 export type ExportItem = {
   id: string
-  kind: 'sticky' | 'text' | 'shape' | 'table'
-  /** plain text; rich formatting flattened */
+  kind: 'sticky' | 'text' | 'shape' | 'table' | 'code'
+  /** Plain text; rich formatting flattened. Always populated. */
   content: string
+  /**
+   * Structured rich-text runs. Present only when at least one run in the
+   * source text has formatting (bold, italic, strikethrough, link, or list
+   * type). When absent, `content` is the canonical representation.
+   */
+  richContent?: RichRun[]
   /** count of '+1' STAMP nodes stuck to this item; omitted when zero */
   votes?: number
   /**
@@ -30,6 +72,8 @@ export type ExportItem = {
   position: { x: number; y: number }
   /** populated when kind === 'table' */
   tableData?: TableData
+  /** populated when kind === 'code' */
+  codeData?: CodeData
 }
 
 /**
@@ -100,6 +144,7 @@ export type ExportIR = {
       text: number
       shapes: number
       tables: number
+      codes: number
       sections: number
     }
   }

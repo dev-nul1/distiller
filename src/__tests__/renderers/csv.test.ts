@@ -9,6 +9,9 @@ import {
   tableIR,
   specialCharsIR,
   mediumIR,
+  codeIR,
+  richLinkItem,
+  richListItem,
   makeIR,
   makeSection,
   makeItem,
@@ -206,5 +209,47 @@ describe('renderCsv – position columns', () => {
 describe('renderCsv – snapshot (medium fixture)', () => {
   it('matches snapshot', () => {
     expect(renderCsv(mediumIR(), {})).toMatchSnapshot()
+  })
+})
+
+describe('renderCsv – rich text (plain text in cells, URLs preserved)', () => {
+  it('includes anchor text and URL in content cell', () => {
+    const ir = makeIR({ orphans: [richLinkItem()] })
+    const rows = parseCsv(renderCsv(ir, {}))
+    expect(rows[1][2]).toContain('our site')
+    expect(rows[1][2]).toContain('https://example.com')
+  })
+
+  it('renders list items as flat plain text (no - prefix from markdown)', () => {
+    const ir = makeIR({ orphans: [richListItem()] })
+    const rows = parseCsv(renderCsv(ir, {}))
+    // The content cell should contain the list text; plain list prefixes '- ' are expected
+    expect(rows[1][2]).toContain('Idea Alpha')
+    expect(rows[1][2]).toContain('Idea Beta')
+  })
+
+  it('does not contain ** or ~~ in CSV cells', () => {
+    const ir = makeIR({ sections: [makeSection('S', 0, [richLinkItem()])] })
+    const rows = parseCsv(renderCsv(ir, {}))
+    const content = rows[1][2]
+    expect(content).not.toContain('**')
+    expect(content).not.toContain('~~')
+  })
+})
+
+describe('renderCsv – code blocks', () => {
+  it('emits kind=code for code block items', () => {
+    const rows = parseCsv(renderCsv(codeIR(), {}))
+    expect(rows[1][1]).toBe('code')
+  })
+
+  it('puts raw code text in the content cell', () => {
+    const rows = parseCsv(renderCsv(codeIR(), {}))
+    expect(rows[1][2]).toContain('function greet')
+  })
+
+  it('does not include fencing in CSV content', () => {
+    const rows = parseCsv(renderCsv(codeIR(), {}))
+    expect(rows[1][2]).not.toContain('```')
   })
 })

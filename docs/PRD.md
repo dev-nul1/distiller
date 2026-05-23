@@ -110,7 +110,21 @@ listing so users have correct expectations:
   section, the export will flatten them.
 - **Color, stamps, connectors not captured.** These carry semantic signal in
   many workshops but require mapping UX that's deferred to v2.
-- **Rich text formatting in stickies/text nodes is flattened to plain text.**
+- **Rich text formatting: best-effort extraction (shipped in v1.x).** Bold,
+  italic, strikethrough, hyperlinks, and list structure are captured and
+  rendered per-format. Known gaps:
+  - **Bold detection is heuristic:** `fontWeight >= 700`. Medium/Semibold
+    (500–600) are not tagged bold.
+  - **Italic detection is heuristic:** detected via `fontName.style`
+    containing "italic" — unusual fonts may produce false positives or misses.
+  - **Underline is captured but not represented in output:** text is
+    preserved; the decoration is silently dropped in all formats.
+  - **Color, font size, and mixed-within-word styling** have no output
+    representation; text is preserved without decoration.
+  - **Nested lists are flattened to a single level** (ORDERED inside UNORDERED
+    or vice versa collapses to the paragraph's own list type).
+  - **Partial-word links** (where a hyperlink spans only part of a word) are
+    supported but may look visually awkward in plain text output.
 
 ## Non-goals for v1
 

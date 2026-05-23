@@ -1,4 +1,5 @@
 import type { ExportIR, ExportItem, ExportSection, RenderOpts } from '../../types'
+import { renderRichRuns, hasListRuns, renderCodeFence } from './richtext'
 
 function voteSuffix(item: ExportItem, opts: RenderOpts): string {
   const parts: string[] = []
@@ -16,7 +17,28 @@ function renderItems(
   indent: string,
   opts: RenderOpts
 ): string[] {
-  return items.map((item) => `${indent}- ${item.content}${voteSuffix(item, opts)}`)
+  return items.map((item) => {
+    const suffix = voteSuffix(item, opts)
+    if (item.kind === 'code' && item.codeData) {
+      // Code items: raw code text, indented, no bullet prefix
+      return renderCodeFence(item.codeData, 'plain')
+        .split('\n')
+        .map((line) => `${indent}${line}`)
+        .join('\n')
+    }
+    if (item.richContent) {
+      const body = renderRichRuns(item.richContent, 'plain')
+      if (hasListRuns(item.richContent)) {
+        // List structure: indent each line, no outer bullet
+        return body
+          .split('\n')
+          .map((line) => `${indent}${line}`)
+          .join('\n') + suffix
+      }
+      return `${indent}- ${body}${suffix}`
+    }
+    return `${indent}- ${item.content}${suffix}`
+  })
 }
 
 function renderSection(section: ExportSection, opts: RenderOpts): string[] {
@@ -43,7 +65,7 @@ function flattenSection(section: ExportSection): ExportItem[] {
 export function renderPlaintext(ir: ExportIR, opts: RenderOpts): string {
   if (opts.includeSections === false) {
     const all = [...ir.orphans, ...ir.sections.flatMap(flattenSection)]
-    return all.map((item) => `- ${item.content}${voteSuffix(item, opts)}`).join('\n')
+    return renderItems(all, '', opts).join('\n')
   }
 
   const parts: string[] = []

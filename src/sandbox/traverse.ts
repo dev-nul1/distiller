@@ -3,6 +3,7 @@ import { extractSticky } from './extract/sticky'
 import { extractText } from './extract/text'
 import { extractShape } from './extract/shape'
 import { extractTable } from './extract/table'
+import { extractCode } from './extract/code'
 import { spatialSort } from './ordering'
 
 type Counts = ExportIR['meta']['counts']
@@ -21,6 +22,8 @@ function extractItem(node: SceneNode): ExportItem | null {
       return extractShape(node as ShapeWithTextNode)
     case 'TABLE':
       return extractTable(node as TableNode)
+    case 'CODE_BLOCK':
+      return extractCode(node as CodeBlockNode)
     default:
       // FRAME, GROUP, CONNECTOR, WIDGET, etc. – skip
       return null
@@ -40,6 +43,9 @@ function bumpCounts(counts: Counts, item: ExportItem): void {
       break
     case 'table':
       counts.tables++
+      break
+    case 'code':
+      counts.codes++
       break
   }
 }
@@ -93,6 +99,7 @@ export function buildIR(roots: SceneNode[], mode: SelectionMode): ExportIR {
     text: 0,
     shapes: 0,
     tables: 0,
+    codes: 0,
     sections: 0,
   }
 

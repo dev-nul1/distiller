@@ -9,6 +9,15 @@ import {
   tableIR,
   specialCharsIR,
   mediumIR,
+  codeIR,
+  codeNoLangIR,
+  richInlineItem,
+  richLinkItem,
+  richSelfLinkItem,
+  richListItem,
+  richOrderedListItem,
+  richMixedItem,
+  makeIR,
   resetIds,
 } from './fixtures'
 
@@ -114,5 +123,80 @@ describe('renderPlaintext – special characters', () => {
 describe('renderPlaintext – snapshot (medium fixture)', () => {
   it('matches snapshot', () => {
     expect(renderPlaintext(mediumIR(), { includeVotes: true })).toMatchSnapshot()
+  })
+})
+
+describe('renderPlaintext – rich text inline (no markup)', () => {
+  it('strips bold/italic/strikethrough markers', () => {
+    const ir = makeIR({ orphans: [richInlineItem()] })
+    const out = renderPlaintext(ir, {})
+    expect(out).not.toContain('**')
+    expect(out).not.toContain('~~')
+    expect(out).not.toContain('*')
+  })
+
+  it('preserves the plain text of formatted runs', () => {
+    const ir = makeIR({ orphans: [richInlineItem()] })
+    const out = renderPlaintext(ir, {})
+    expect(out).toContain('check the docs')
+    expect(out).toContain('details')
+    expect(out).toContain('Important')
+  })
+})
+
+describe('renderPlaintext – rich text links', () => {
+  it('includes URL alongside anchor text', () => {
+    const ir = makeIR({ orphans: [richLinkItem()] })
+    const out = renderPlaintext(ir, {})
+    expect(out).toContain('our site (https://example.com)')
+  })
+
+  it('does not duplicate URL when href equals display text', () => {
+    const ir = makeIR({ orphans: [richSelfLinkItem()] })
+    const out = renderPlaintext(ir, {})
+    // Should contain the URL once, not twice
+    const count = (out.match(/https:\/\/example\.com/g) ?? []).length
+    expect(count).toBe(1)
+  })
+})
+
+describe('renderPlaintext – rich text lists', () => {
+  it('renders unordered list items with - prefix', () => {
+    const ir = makeIR({ orphans: [richListItem()] })
+    const out = renderPlaintext(ir, {})
+    expect(out).toContain('- Idea Alpha')
+    expect(out).toContain('- Idea Beta')
+    expect(out).toContain('- Idea Gamma')
+  })
+
+  it('renders ordered list with counters', () => {
+    const ir = makeIR({ orphans: [richOrderedListItem()] })
+    const out = renderPlaintext(ir, {})
+    expect(out).toContain('1. First step')
+    expect(out).toContain('2. Second step')
+    expect(out).toContain('3. Third step')
+  })
+
+  it('renders mixed bold+list without markup syntax', () => {
+    const ir = makeIR({ orphans: [richMixedItem()] })
+    const out = renderPlaintext(ir, {})
+    expect(out).toContain('- Do this')
+    expect(out).toContain('- Also do that')
+    expect(out).not.toContain('**')
+    expect(out).not.toContain('*that*')
+  })
+})
+
+describe('renderPlaintext – code blocks', () => {
+  it('renders code as raw text (no fencing)', () => {
+    const out = renderPlaintext(codeIR(), {})
+    expect(out).toContain('function greet')
+    expect(out).not.toContain('```')
+  })
+
+  it('renders code-no-lang as raw text', () => {
+    const out = renderPlaintext(codeNoLangIR(), {})
+    expect(out).toContain('hello world')
+    expect(out).not.toContain('```')
   })
 })
