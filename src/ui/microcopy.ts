@@ -20,10 +20,14 @@ export const TOGGLE_HELPERS = {
 
 // ── Format picker — per-format one-liner descriptions ───────────────────────
 // Shown inline beneath the Format select; updates with each selection.
+// When format is Markdown, the description also reacts to the AI-optimized checkbox.
 
 export const FORMAT_DESCRIPTIONS: Record<Format, string> = {
   markdown:  'Headings, lists, and tables. Good for docs and wikis.',
-  llm:       'Markdown plus context headers, formatted for pasting into AI chats.',
   plaintext: 'Simple indented text, no formatting syntax.',
   csv:       'Tabular rows, for spreadsheets.',
 }
+
+/** Shown in place of the standard Markdown description when AI-optimized is checked. */
+export const MARKDOWN_AI_DESCRIPTION =
+  'Markdown with context headers, formatted for AI tools.'

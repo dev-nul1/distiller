@@ -24,7 +24,7 @@ import type { Format } from '../../types'
  * read as headings without full markdown rendering.
  */
 function renderLines(content: string, format: Format) {
-  const applyHeadings = format === 'markdown' || format === 'llm'
+  const applyHeadings = format === 'markdown'
   return content.split('\n').map((line, i) => {
     const isH1    = applyHeadings && /^# /.test(line)
     const isH2up  = applyHeadings && /^#{2,} /.test(line)

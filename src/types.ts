@@ -1,6 +1,6 @@
 export type SelectionMode = 'page' | 'section' | 'selection' | 'viewport'
 
-export type Format = 'plaintext' | 'markdown' | 'llm' | 'csv'
+export type Format = 'plaintext' | 'markdown' | 'csv'
 
 export type ExtractOptions = {
   // reserved for future per-extraction options
@@ -115,6 +115,12 @@ export type RenderOpts = {
    */
   includeAuthors?: boolean
   /**
+   * When true, Markdown output includes the AI context preamble (the former
+   * "LLM-ready" output). Only meaningful when used with the 'markdown' format.
+   * Persisted in clientStorage; defaults to true.
+   */
+  aiOptimized?: boolean
+  /**
    * Internal: when true, vote counts and author names are emitted as plain
    * text (e.g. "(3 votes)") rather than markdown italics ("*(3 votes)*").
    * Set by the LLM renderer when calling renderMarkdown for its body.
@@ -130,6 +136,8 @@ export type PluginSettings = {
   csvExpandTables: boolean
   showPreview: boolean
   includeAuthors: boolean
+  /** Whether Markdown output should include the AI context preamble. Defaults to true. */
+  aiOptimized: boolean
 }
 
 export type ExportIR = {

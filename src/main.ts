@@ -22,12 +22,21 @@ import { buildIR } from './sandbox/traverse'
 
 const SETTINGS_KEY = 'pluginSettings'
 
+/**
+ * Schema version for persisted settings. Bump when a field is added or renamed.
+ * v1 (unversioned): includeVotes, includeSections, csvExpandTables, showPreview, includeAuthors
+ * v2: added aiOptimized (default true). Also retires the 'llm' format — users who
+ *     had that format selected get Markdown + AI-optimized-on (equivalent output).
+ */
+const SETTINGS_SCHEMA_VERSION = 2
+
 const DEFAULT_SETTINGS: PluginSettings = {
   includeVotes: true,
   includeSections: true,
   csvExpandTables: true,
   showPreview: false,
   includeAuthors: false,
+  aiOptimized: true,
 }
 
 export default function (): void {
@@ -61,8 +70,15 @@ export default function (): void {
   }, 500)
 
   on<LoadSettingsRequestHandler>('LOAD_SETTINGS_REQUEST', async () => {
-    const stored = await figma.clientStorage.getAsync(SETTINGS_KEY) as Partial<PluginSettings> | undefined
-    const settings: PluginSettings = { ...DEFAULT_SETTINGS, ...(stored ?? {}) }
+    type StoredConfig = PluginSettings & { schemaVersion?: number }
+    const raw = await figma.clientStorage.getAsync(SETTINGS_KEY) as StoredConfig | undefined
+    // Spread-merge: any missing field (e.g. aiOptimized for v1 stored data) takes its
+    // DEFAULT_SETTINGS value. This is the v1→v2 migration: old users get aiOptimized:true.
+    const settings: PluginSettings = { ...DEFAULT_SETTINGS, ...(raw ?? {}) }
+    // Stamp the current schema version on the stored record if it's out of date.
+    if ((raw?.schemaVersion ?? 0) < SETTINGS_SCHEMA_VERSION) {
+      await figma.clientStorage.setAsync(SETTINGS_KEY, { ...settings, schemaVersion: SETTINGS_SCHEMA_VERSION })
+    }
     const hasSelection = figma.currentPage.selection.length > 0
     emit<SettingsLoadedHandler>('SETTINGS_LOADED', settings, hasSelection)
   })

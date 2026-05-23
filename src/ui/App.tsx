@@ -40,8 +40,7 @@ function renderOutput(
   if (!ir) return ''
   switch (format) {
     case 'plaintext': return renderPlaintext(ir, opts)
-    case 'markdown':  return renderMarkdown(ir, opts)
-    case 'llm':       return renderLlm(ir, opts)
+    case 'markdown':  return opts.aiOptimized ? renderLlm(ir, opts) : renderMarkdown(ir, opts)
     case 'csv':       return renderCsv(ir, opts)
   }
 }
@@ -174,6 +173,7 @@ export function App() {
   const [csvExpandTables, setCsvExpandTables] = useState(true)
   const [showPreview, setShowPreview] = useState(false)
   const [includeAuthors, setIncludeAuthors] = useState(false)
+  const [aiOptimized, setAiOptimized] = useState(true)
   const [settingsReady, setSettingsReady] = useState(false)
 
   // ── transient UI state ────────────────────────────────────────────────────
@@ -213,6 +213,7 @@ export function App() {
       setCsvExpandTables(s.csvExpandTables)
       setShowPreview(s.showPreview)
       setIncludeAuthors(s.includeAuthors)
+      setAiOptimized(s.aiOptimized)
       if (hasSelection) setMode('selection')
       setSettingsReady(true)
       off()
@@ -257,10 +258,10 @@ export function App() {
   useEffect(() => {
     if (!settingsReady) return
     const settings: PluginSettings = {
-      includeVotes, includeSections, csvExpandTables, showPreview, includeAuthors,
+      includeVotes, includeSections, csvExpandTables, showPreview, includeAuthors, aiOptimized,
     }
     emit<SaveSettingsHandler>('SAVE_SETTINGS', settings)
-  }, [includeVotes, includeSections, csvExpandTables, showPreview, includeAuthors, settingsReady])
+  }, [includeVotes, includeSections, csvExpandTables, showPreview, includeAuthors, aiOptimized, settingsReady])
 
   // ── auto-extract (debounced) ──────────────────────────────────────────────
   //
@@ -299,7 +300,7 @@ export function App() {
       clearTimeout(timer)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, format, includeVotes, includeSections, includeAuthors, settingsReady, selectionRevision])
+  }, [mode, format, aiOptimized, includeVotes, includeSections, includeAuthors, settingsReady, selectionRevision])
 
   // ── keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
@@ -322,7 +323,7 @@ export function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, showPreview])   // re-register when mode or showPreview changes so closures are fresh
 
-  const opts: RenderOpts = { includeVotes, includeSections, csvExpandTables, includeAuthors }
+  const opts: RenderOpts = { includeVotes, includeSections, csvExpandTables, includeAuthors, aiOptimized }
 
   /**
    * Single source of truth for the live extraction result.
@@ -336,7 +337,7 @@ export function App() {
     if (countItems(ir) === 0) return { kind: 'empty', message: EMPTY_MESSAGES[mode] }
     return { kind: 'has-content', ir, rendered: renderOutput(ir, format, opts) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, error, ir, mode, format, includeVotes, includeSections, csvExpandTables, includeAuthors])
+  }, [loading, error, ir, mode, format, aiOptimized, includeVotes, includeSections, csvExpandTables, includeAuthors])
 
   // ── window resize ─────────────────────────────────────────────────────────
   //
@@ -478,7 +479,12 @@ export function App() {
       ────────────────────────────────────────────────────────────────────── */}
       <div class="flex flex-shrink-0 flex-col gap-3 py-4">
         <ModePicker value={mode} onValueChange={setMode} />
-        <FormatPicker value={format} onValueChange={(v) => setFormat(v)} />
+        <FormatPicker
+          value={format}
+          onValueChange={(v) => setFormat(v)}
+          aiOptimized={aiOptimized}
+          onAiOptimizedChange={setAiOptimized}
+        />
 
         {/* Clipboard error — persistent inline warning (rare; clipboard API failure) */}
         {clipError && (
