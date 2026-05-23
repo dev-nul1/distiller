@@ -1,5 +1,5 @@
 import { h, Fragment } from 'preact'
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { Banner, Button, Divider, Toggle } from '@create-figma-plugin/ui'
 import { IconWarning16 } from '@create-figma-plugin/ui'
 import { emit, on } from '@create-figma-plugin/utilities'
@@ -160,6 +160,12 @@ const COMPACT_MIN_HEIGHT = 200
  * measured content height stays well below this).
  */
 const COMPACT_MAX_HEIGHT = 480
+
+/**
+ * Belt-and-suspenders padding added to the measured scrollHeight before
+ * clamping, so minor sub-pixel rounding never triggers a transient scrollbar.
+ */
+const COMPACT_HEIGHT_BUFFER = 4
 
 export function App() {
   // ── core state ────────────────────────────────────────────────────────────
@@ -347,24 +353,22 @@ export function App() {
   //
   // Compact height is measured from the DOM (containerRef.scrollHeight) so it
   // automatically accommodates varying result-header heights (pills vs. error
-  // banner) without magic numbers. Debounced 50 ms to absorb rapid state
-  // transitions (e.g. loading → has-content triggering two renders).
+  // banner) without magic numbers. useLayoutEffect runs synchronously after DOM
+  // mutations and before the browser paints, so the resize request is sent
+  // before any transient-overflow frame can appear.
   //
   // The large-board fallback is treated as compact: the preview text area is
   // absent, so the window should be small regardless of showPreview.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!settingsReady) return
     const isExpandedNow = showPreview && !isBoardTooLarge
-    const timer = setTimeout(() => {
-      if (isExpandedNow) {
-        emit<ResizeWindowHandler>('RESIZE_WINDOW', { width: PANEL_WIDTH, height: EXPANDED_HEIGHT })
-      } else {
-        const h = containerRef.current?.scrollHeight ?? COMPACT_MIN_HEIGHT
-        const clamped = Math.max(COMPACT_MIN_HEIGHT, Math.min(COMPACT_MAX_HEIGHT, h))
-        emit<ResizeWindowHandler>('RESIZE_WINDOW', { width: PANEL_WIDTH, height: clamped })
-      }
-    }, 50)
-    return () => clearTimeout(timer)
+    if (isExpandedNow) {
+      emit<ResizeWindowHandler>('RESIZE_WINDOW', { width: PANEL_WIDTH, height: EXPANDED_HEIGHT })
+    } else {
+      const h = containerRef.current?.scrollHeight ?? COMPACT_MIN_HEIGHT
+      const clamped = Math.max(COMPACT_MIN_HEIGHT, Math.min(COMPACT_MAX_HEIGHT, h + COMPACT_HEIGHT_BUFFER))
+      emit<ResizeWindowHandler>('RESIZE_WINDOW', { width: PANEL_WIDTH, height: clamped })
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showPreview, isBoardTooLarge, liveResult.kind, settingsReady, view])
 

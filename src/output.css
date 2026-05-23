@@ -418,6 +418,9 @@
   .bg-\[var\(--figma-color-bg-secondary\)\] {
     background-color: var(--figma-color-bg-secondary);
   }
+  .bg-\[var\(--figma-color-bg-selected\)\] {
+    background-color: var(--figma-color-bg-selected);
+  }
   .bg-\[var\(--figma-color-border\)\] {
     background-color: var(--figma-color-border);
   }
@@ -435,6 +438,9 @@
   }
   .px-2 {
     padding-inline: calc(var(--spacing) * 2);
+  }
+  .px-2\.5 {
+    padding-inline: calc(var(--spacing) * 2.5);
   }
   .px-3 {
     padding-inline: calc(var(--spacing) * 3);
@@ -456,6 +462,9 @@
   }
   .py-1 {
     padding-block: calc(var(--spacing) * 1);
+  }
+  .py-1\.5 {
+    padding-block: calc(var(--spacing) * 1.5);
   }
   .py-2 {
     padding-block: calc(var(--spacing) * 2);
@@ -568,6 +577,9 @@
   }
   .text-\[var\(--figma-color-text\)\] {
     color: var(--figma-color-text);
+  }
+  .text-\[var\(--figma-color-text-brand\)\] {
+    color: var(--figma-color-text-brand);
   }
   .text-\[var\(--figma-color-text-disabled\)\] {
     color: var(--figma-color-text-disabled);

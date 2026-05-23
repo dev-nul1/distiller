@@ -49,7 +49,6 @@ export function PreviewPanel({ content, loading, format }: Props) {
     <div class="flex min-h-0 flex-1 items-center justify-center bg-[var(--figma-color-bg-secondary)]">
       <div class="flex items-center gap-2 text-[11px] text-[var(--figma-color-text-secondary)]">
         <LoadingIndicator />
-        <span>Extracting…</span>
       </div>
     </div>
   ) : (

@@ -110,6 +110,8 @@ export function SettingsPopover({
     (includeSections !== CONTENT_DEFAULTS.includeSections ? 1 : 0) +
     (includeAuthors  !== CONTENT_DEFAULTS.includeAuthors  ? 1 : 0)
   const isActive = nonDefaultCount > 0
+  const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
 
   function close() {
     setOpen(false)
@@ -178,15 +180,19 @@ export function SettingsPopover({
         onClick={toggle}
         aria-expanded={open}
         aria-haspopup="dialog"
-        class={`flex cursor-default items-center gap-1 rounded border px-2 py-1 text-[11px] leading-none transition-colors${!isActive ? ' hover:bg-[var(--figma-color-bg-hover)]' : ''}`}
-        style={isActive ? {
-          background:  'var(--figma-color-bg-selected)',
-          color:       'var(--figma-color-text-brand)',
-          borderColor: 'var(--figma-color-border)',
-        } : {
-          background:  'var(--figma-color-bg-secondary)',
-          color:       'var(--figma-color-text-secondary)',
-          borderColor: 'var(--figma-color-border)',
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onFocus={(e) => { if (e.currentTarget.matches(':focus-visible')) setFocused(true) }}
+        onBlur={() => setFocused(false)}
+        class="flex cursor-default items-center gap-1 rounded text-[11px] leading-none transition-colors"
+        style={{
+          padding: '4px 10px 4px 6px',
+          border: '1px solid var(--figma-color-border)',
+          color: isActive ? 'var(--figma-color-text-brand)' : 'var(--figma-color-text-secondary)',
+          background: hovered
+            ? (isActive ? 'var(--figma-color-bg-selected-hover)' : 'var(--figma-color-bg-tertiary)')
+            : (isActive ? 'var(--figma-color-bg-selected)' : 'var(--figma-color-bg-secondary)'),
+          ...(focused ? { outline: '2px solid var(--figma-color-border-selected)', outlineOffset: '2px' } : {}),
         }}
       >
         <IconAdjust16 />

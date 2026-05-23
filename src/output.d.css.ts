@@ -2,6 +2,7 @@ declare const styles: {
   readonly "animate-pulse": string;
   readonly "bg-[#1a7a50]": string;
   readonly "bg-[var(--figma-color-bg-secondary)]": string;
+  readonly "bg-[var(--figma-color-bg-selected)]": string;
   readonly "bg-[var(--figma-color-border)]": string;
   readonly "block": string;
   readonly "border": string;
@@ -95,6 +96,7 @@ declare const styles: {
   readonly "pulse": string;
   readonly "px-1": string;
   readonly "px-2": string;
+  readonly "px-2.5": string;
   readonly "px-3": string;
   readonly "px-4": string;
   readonly "px-5": string;
@@ -102,6 +104,7 @@ declare const styles: {
   readonly "py-0": string;
   readonly "py-0.5": string;
   readonly "py-1": string;
+  readonly "py-1.5": string;
   readonly "py-2": string;
   readonly "py-3": string;
   readonly "py-4": string;
@@ -129,6 +132,7 @@ declare const styles: {
   readonly "text-[13px]": string;
   readonly "text-[17px]": string;
   readonly "text-[var(--figma-color-text)]": string;
+  readonly "text-[var(--figma-color-text-brand)]": string;
   readonly "text-[var(--figma-color-text-disabled)]": string;
   readonly "text-[var(--figma-color-text-secondary)]": string;
   readonly "text-center": string;

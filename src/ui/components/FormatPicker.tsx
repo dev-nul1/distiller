@@ -40,7 +40,11 @@ export function FormatPicker({ value, onValueChange, aiOptimized, onAiOptimizedC
       {/* AI-optimized checkbox — only visible when Markdown is selected */}
       {value === 'markdown' && (
         <div class="pl-[92px]">
-          <Checkbox value={aiOptimized} onValueChange={onAiOptimizedChange}>
+          <Checkbox
+            value={aiOptimized}
+            onValueChange={onAiOptimizedChange}
+            onMouseDown={(e) => e.preventDefault()}
+          >
             AI-optimized
           </Checkbox>
         </div>
