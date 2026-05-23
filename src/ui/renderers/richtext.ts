@@ -116,9 +116,11 @@ export function hasListRuns(runs: RichRun[]): boolean {
  * Plain text mode outputs the code as-is (no fencing syntax).
  */
 export function renderCodeFence(codeData: CodeData, mode: RichRenderMode): string {
+  // Trim leading/trailing blank lines from the code content.
+  const code = codeData.code.replace(/^\n+/, '').replace(/\n+$/, '')
   if (mode === 'plain') {
-    return codeData.code
+    return code
   }
   const lang = codeData.language ?? ''
-  return `\`\`\`${lang}\n${codeData.code}\n\`\`\``
+  return `\`\`\`${lang}\n${code}\n\`\`\``
 }

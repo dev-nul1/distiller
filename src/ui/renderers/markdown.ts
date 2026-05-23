@@ -12,30 +12,29 @@ function headingLevel(depth: number): string {
   return '#'.repeat(Math.min(depth + 2, 6))
 }
 
-function voteSuffix(item: ExportItem, opts: RenderOpts): string {
-  if (opts.includeVotes === false || !item.votes) return ''
-  const vStr = `${item.votes} ${item.votes === 1 ? 'vote' : 'votes'}`
-  return ' ' + (opts.plainMeta ? `(${vStr})` : `*(${vStr})*`)
-}
-
 /** Map item kind to a display label for the block heading. */
-const KIND_LABEL: Partial<Record<ExportItem['kind'], string>> = {
+const KIND_LABEL: Record<ExportItem['kind'], string> = {
   sticky: 'Sticky',
   text: 'Text',
   shape: 'Shape',
+  code: 'Code block',
+  table: 'Table',
 }
 
 /**
  * Build the block-level heading for an item.
+ * Assembles: "### Label (Author) · N votes" from whichever parts are present.
  * sectionDepth is the depth of the containing section (use 0 for orphans).
- * Tables and code blocks don't get a heading.
  */
 function itemHeading(item: ExportItem, sectionDepth: number, opts: RenderOpts): string {
-  const label = KIND_LABEL[item.kind]
-  if (!label) return ''
+  const label = KIND_LABEL[item.kind] ?? item.kind
   const hashes = '#'.repeat(Math.min(sectionDepth + 3, 6))
-  const authorPart = (opts.includeAuthors && item.author) ? ` (${item.author})` : ''
-  return `${hashes} ${label}${authorPart}`
+  let heading = `${hashes} ${label}`
+  if (opts.includeAuthors && item.author) heading += ` (${item.author})`
+  if (opts.includeVotes !== false && item.votes) {
+    heading += ` \u00b7 ${item.votes} ${item.votes === 1 ? 'vote' : 'votes'}`
+  }
+  return heading
 }
 
 /** Escape pipe characters inside a table cell. */
@@ -75,21 +74,18 @@ function renderMarkdownTable(tableData: TableData): string {
 }
 
 function renderItem(item: ExportItem, opts: RenderOpts, sectionDepth: number): string {
+  const heading = itemHeading(item, sectionDepth, opts)
   if (item.kind === 'table' && item.tableData) {
-    return renderMarkdownTable(item.tableData)
+    return `${heading}\n${renderMarkdownTable(item.tableData)}`
   }
   if (item.kind === 'code' && item.codeData) {
-    return renderCodeFence(item.codeData, 'markup')
+    return `${heading}\n${renderCodeFence(item.codeData, 'markup')}`
   }
-  const heading = itemHeading(item, sectionDepth, opts)
-  const suffix = voteSuffix(item, opts)
-  let body: string
-  if (item.richContent) {
-    body = renderRichRuns(item.richContent, 'markup')
-  } else {
-    body = item.content
-  }
-  return `${heading}\n${body}${suffix}`
+  const body = item.richContent
+    ? renderRichRuns(item.richContent, 'markup')
+    : item.content
+  if (!body.trim()) return heading
+  return `${heading}\n${body}`
 }
 
 function renderSection(section: ExportSection, opts: RenderOpts): string[] {

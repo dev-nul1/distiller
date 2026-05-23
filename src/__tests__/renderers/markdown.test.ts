@@ -95,26 +95,31 @@ describe('renderMarkdown – heading level capping', () => {
 })
 
 describe('renderMarkdown – votes', () => {
-  it('appends italic vote suffix by default', () => {
+  it('puts vote count in the block heading', () => {
     const out = renderMarkdown(votesIR(), {})
-    expect(out).toContain('*(5 votes)*')
-    expect(out).toContain('*(1 vote)*')
+    expect(out).toContain('\u00b7 5 votes')
+    expect(out).toContain('\u00b7 1 vote')
   })
 
   it('uses singular for exactly 1 vote', () => {
     const out = renderMarkdown(votesIR(), {})
-    expect(out).toContain('*(1 vote)*')
-    expect(out).not.toContain('*(1 votes)*')
+    expect(out).toContain('\u00b7 1 vote')
+    expect(out).not.toContain('\u00b7 1 votes')
   })
 
-  it('omits suffix when includeVotes is false', () => {
+  it('omits votes when includeVotes is false', () => {
     const out = renderMarkdown(votesIR(), { includeVotes: false })
-    expect(out).not.toMatch(/\*\(\d+ votes?\)\*/)
+    expect(out).not.toContain('\u00b7')
     expect(out).toContain('Top idea')
   })
 })
 
 describe('renderMarkdown – tables', () => {
+  it('renders a ### Table block heading before the pipe table', () => {
+    const out = renderMarkdown(tableIR(), {})
+    expect(out).toContain('### Table')
+  })
+
   it('renders a markdown table with header separator', () => {
     const out = renderMarkdown(tableIR(), {})
     expect(out).toContain('| Name | Role | Team |')
@@ -234,6 +239,11 @@ describe('renderMarkdown – rich text lists', () => {
 })
 
 describe('renderMarkdown – code blocks', () => {
+  it('renders a ### Code block heading before the fenced block', () => {
+    const out = renderMarkdown(codeIR(), {})
+    expect(out).toContain('### Code block')
+  })
+
   it('renders a code block as a fenced code block with language', () => {
     const out = renderMarkdown(codeIR(), {})
     expect(out).toContain('```typescript')
@@ -243,8 +253,13 @@ describe('renderMarkdown – code blocks', () => {
 
   it('renders a PLAINTEXT code block as a fenced block with no language tag', () => {
     const out = renderMarkdown(codeNoLangIR(), {})
-    expect(out).toMatch(/^```\n/)
-    expect(out).toContain('hello world')
+    expect(out).toContain('### Code block')
+    expect(out).toContain('```\nhello world')
+  })
+
+  it('code fence has no leading blank line inside', () => {
+    const out = renderMarkdown(codeIR(), {})
+    expect(out).not.toContain('```typescript\n\n')
   })
 })
 
@@ -285,6 +300,26 @@ describe('renderMarkdown – author in heading', () => {
     expect(out).not.toContain('()')
   })
 
+  it('assembles author AND votes: ### Sticky (Alice) · 2 votes', () => {
+    resetIds()
+    const ir = makeIR({
+      orphans: [makeItem({ content: 'Hi', author: 'Alice', votes: 2 })],
+    })
+    const out = renderMarkdown(ir, { includeAuthors: true })
+    expect(out).toContain('### Sticky (Alice) \u00b7 2 votes')
+  })
+
+  it('assembles votes only (no author): ### Sticky · 2 votes', () => {
+    resetIds()
+    const ir = makeIR({
+      orphans: [makeItem({ content: 'Hi', votes: 2 })],
+    })
+    const out = renderMarkdown(ir, {})
+    expect(out).toContain('### Sticky \u00b7 2 votes')
+    expect(out).not.toContain('()')
+    expect(out).not.toMatch(/\u00b7\s*$/)
+  })
+
   it('items in depth-0 sections get ### heading', () => {
     resetIds()
     const ir = makeIR({
@@ -302,5 +337,27 @@ describe('renderMarkdown – author in heading', () => {
     })
     const out = renderMarkdown(ir, {})
     expect(out).toContain('#### Sticky')
+  })
+})
+
+describe('renderMarkdown – all item types have block headers', () => {
+  it('text item gets ### Text heading', () => {
+    resetIds()
+    const ir = makeIR({ orphans: [makeItem({ kind: 'text', content: 'body' })] })
+    expect(renderMarkdown(ir, {})).toContain('### Text')
+  })
+
+  it('shape item gets ### Shape heading', () => {
+    resetIds()
+    const ir = makeIR({ orphans: [makeItem({ kind: 'shape', content: 'body' })] })
+    expect(renderMarkdown(ir, {})).toContain('### Shape')
+  })
+
+  it('empty-content item with votes renders just the heading', () => {
+    resetIds()
+    const ir = makeIR({ orphans: [makeItem({ content: '', votes: 3 })] })
+    const out = renderMarkdown(ir, {})
+    expect(out).toContain('### Sticky \u00b7 3 votes')
+    expect(out).not.toContain('(empty)')
   })
 })

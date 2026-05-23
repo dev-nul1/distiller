@@ -76,45 +76,50 @@ describe('renderPlaintext – nested sections', () => {
     expect(lines[innerIdx]).toMatch(/^  Inner/)
   })
 
-  it('indents child items deeper than parent items', () => {
+  it('indents items with label and content at the same indent level', () => {
     const out = renderPlaintext(nestedSectionsIR(), {})
     // Label lines: depth-0 items at 2 spaces, depth-1 items at 4 spaces
     expect(out).toContain('  Sticky')   // depth-0 label
     expect(out).toContain('    Sticky') // depth-1 label
-    // Content lines one level deeper
-    expect(out).toContain('    Parent item')  // depth-0 content at 4 spaces
-    expect(out).toContain('      Child item') // depth-1 content at 6 spaces
+    // Content at the same indent level as the label (no extra indent)
+    expect(out).toContain('  Parent item')   // depth-0 content at 2 spaces
+    expect(out).toContain('    Child item')  // depth-1 content at 4 spaces
   })
 })
 
 describe('renderPlaintext – votes', () => {
-  it('appends vote count when includeVotes is not false', () => {
+  it('puts vote count in the label line', () => {
     const out = renderPlaintext(votesIR(), {})
-    expect(out).toContain('Top idea (5 votes)')
-    expect(out).toContain('Second idea (1 vote)')
+    expect(out).toContain('Sticky \u00b7 5 votes')
+    expect(out).toContain('Sticky \u00b7 1 vote')
+    expect(out).toContain('Top idea')
+    expect(out).toContain('Second idea')
   })
 
   it('uses singular "vote" for exactly 1', () => {
     const out = renderPlaintext(votesIR(), {})
-    expect(out).toContain('Second idea (1 vote)')
-    expect(out).not.toContain('Second idea (1 votes)')
+    expect(out).toContain('Sticky \u00b7 1 vote')
+    expect(out).not.toContain('Sticky \u00b7 1 votes')
   })
 
   it('omits votes when includeVotes is false', () => {
     const out = renderPlaintext(votesIR(), { includeVotes: false })
     expect(out).not.toMatch(/\(\d+ votes?\)/)
+    expect(out).not.toContain('\u00b7')
   })
 
-  it('omits suffix on items with no votes', () => {
+  it('omits vote marker on items with no votes', () => {
     const out = renderPlaintext(votesIR(), {})
     expect(out).toContain('No votes idea')
-    expect(out).not.toMatch(/No votes idea \(\d+ votes?\)/)
+    // The label for the no-votes item should not have a middot
+    expect(out).not.toMatch(/No votes idea \u00b7/)
   })
 })
 
 describe('renderPlaintext – tables (rendered as flat content)', () => {
-  it('renders table content string as a bullet', () => {
+  it('renders a "Table" label line before the content', () => {
     const out = renderPlaintext(tableIR(), {})
+    expect(out).toContain('Table')
     expect(out).toContain('Name | Role | Team')
   })
 })
@@ -196,14 +201,16 @@ describe('renderPlaintext – rich text lists', () => {
 })
 
 describe('renderPlaintext – code blocks', () => {
-  it('renders code as raw text (no fencing)', () => {
+  it('renders a "Code block" label line before the code', () => {
     const out = renderPlaintext(codeIR(), {})
+    expect(out).toContain('Code block')
     expect(out).toContain('function greet')
     expect(out).not.toContain('```')
   })
 
-  it('renders code-no-lang as raw text', () => {
+  it('renders code-no-lang with a label line', () => {
     const out = renderPlaintext(codeNoLangIR(), {})
+    expect(out).toContain('Code block')
     expect(out).toContain('hello world')
     expect(out).not.toContain('```')
   })
@@ -236,5 +243,36 @@ describe('renderPlaintext – author in label', () => {
     })
     const out = renderPlaintext(ir, { includeAuthors: true })
     expect(out).not.toContain('\u2014')
+  })
+
+  it('assembles author AND votes: "Sticky — Alice · 2 votes"', () => {
+    resetIds()
+    const ir = makeIR({
+      orphans: [makeItem({ content: 'Hi', author: 'Alice', votes: 2 })],
+    })
+    const out = renderPlaintext(ir, { includeAuthors: true })
+    expect(out).toContain('Sticky \u2014 Alice \u00b7 2 votes')
+  })
+})
+
+describe('renderPlaintext – all item types have label lines', () => {
+  it('text item gets "Text" label', () => {
+    resetIds()
+    const ir = makeIR({ orphans: [makeItem({ kind: 'text', content: 'body' })] })
+    expect(renderPlaintext(ir, {})).toContain('Text')
+  })
+
+  it('shape item gets "Shape" label', () => {
+    resetIds()
+    const ir = makeIR({ orphans: [makeItem({ kind: 'shape', content: 'body' })] })
+    expect(renderPlaintext(ir, {})).toContain('Shape')
+  })
+
+  it('empty-content item with votes renders just the label line', () => {
+    resetIds()
+    const ir = makeIR({ orphans: [makeItem({ content: '', votes: 3 })] })
+    const out = renderPlaintext(ir, {})
+    expect(out).toContain('Sticky \u00b7 3 votes')
+    expect(out).not.toContain('(empty)')
   })
 })

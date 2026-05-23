@@ -15,30 +15,30 @@ Important: **check the docs** for *~~details~~*
 exports[`renderMarkdown – snapshot (medium fixture) > matches snapshot 1`] = `
 "## Went Well
 
-### Sticky
-Fast CI pipeline *(4 votes)*
+### Sticky · 4 votes
+Fast CI pipeline
 
-### Sticky
-Great collaboration *(3 votes)*
+### Sticky · 3 votes
+Great collaboration
 
-### Sticky
-Clear sprint goal *(1 vote)*
+### Sticky · 1 vote
+Clear sprint goal
 
 ## To Improve
 
-### Sticky
-Too many meetings *(5 votes)*
+### Sticky · 5 votes
+Too many meetings
 
-### Sticky
-Unclear requirements *(2 votes)*
+### Sticky · 2 votes
+Unclear requirements
 
-### Sticky
-Flaky tests *(1 vote)*
+### Sticky · 1 vote
+Flaky tests
 
 ### Subgroup
 
-#### Sticky
-Nested sticky A *(2 votes)*
+#### Sticky · 2 votes
+Nested sticky A
 
 #### Sticky
 Nested sticky B

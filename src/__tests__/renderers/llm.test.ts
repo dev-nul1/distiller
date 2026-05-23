@@ -60,10 +60,10 @@ describe('renderLlm – markdown body', () => {
     expect(out).toContain('Hello world')
   })
 
-  it('passes votes through to markdown renderer as plain text (plainMeta mode)', () => {
+  it('puts vote count in the block heading (no inline vote markers)', () => {
     const out = renderLlm(votesIR(), {})
-    // LLM renderer uses plainMeta:true — votes appear as plain "(n votes)", not "*(n votes)*"
-    expect(out).toContain('(5 votes)')
+    // Votes appear in the block heading as "· N votes"
+    expect(out).toContain('\u00b7 5 votes')
     expect(out).not.toContain('*(5 votes)*')
   })
 
