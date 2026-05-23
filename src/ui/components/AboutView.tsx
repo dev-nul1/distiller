@@ -15,6 +15,12 @@ const VIEW_SOURCE_URL    = 'https://github.com/dev-nul1/figjam-exporter'
 const AUTHOR_NAME = 'Philip Scheid'
 const AUTHOR_ROLE = 'Author & maintainer'
 
+// ── Plugin name strings ───────────────────────────────────────────────────────
+// Full name: en dash – (U+2013) between brand and descriptor. Keep exact.
+// Short form: used in space-constrained surfaces inside the running plugin UI.
+const PLUGIN_NAME_FULL  = 'Distiller – FigJam Exporter'
+const PLUGIN_NAME_SHORT = 'Distiller'
+
 // ── How-it-works steps ────────────────────────────────────────────────────────
 const STEPS = [
   {
@@ -117,7 +123,7 @@ export function AboutView({ onBack }: Props) {
         </div>
         <div class="flex flex-col items-center gap-[2px]">
           <span class="text-[13px] font-semibold text-[var(--figma-color-text)]">
-            FigJam Exporter
+            {PLUGIN_NAME_FULL}
           </span>
           <span class="text-[11px] text-[var(--figma-color-text-secondary)]">
             v{pkg.version}

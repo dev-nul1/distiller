@@ -37,7 +37,7 @@
       ]
     },
     "id": "TBD-assigned-at-publish",
-    "name": "FigJam Exporter",
+    "name": "Distiller – FigJam Exporter",
     "main": "src/main.ts",
     "ui": "src/ui.tsx"
   }
