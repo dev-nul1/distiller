@@ -13,7 +13,10 @@ declare const styles: {
   readonly "cursor-default": string;
   readonly "cursor-pointer": string;
   readonly "cursor-text": string;
+  readonly "dot-pulse-live": string;
+  readonly "dot-pulse-updating": string;
   readonly "ease-in": string;
+  readonly "ease-in-out": string;
   readonly "filter": string;
   readonly "fixed": string;
   readonly "flex": string;
@@ -27,6 +30,8 @@ declare const styles: {
   readonly "font-medium": string;
   readonly "font-mono": string;
   readonly "font-semibold": string;
+  readonly "gap-0": string;
+  readonly "gap-0.5": string;
   readonly "gap-1": string;
   readonly "gap-1.5": string;
   readonly "gap-2": string;
@@ -76,6 +81,7 @@ declare const styles: {
   readonly "pb-4": string;
   readonly "pb-5": string;
   readonly "pl-2": string;
+  readonly "pl-[92px]": string;
   readonly "pointer-events-none": string;
   readonly "pt-1": string;
   readonly "pt-2": string;
@@ -108,6 +114,8 @@ declare const styles: {
   readonly "select-text": string;
   readonly "shrink": string;
   readonly "shrink-0": string;
+  readonly "status-dot-live": string;
+  readonly "status-dot-updating": string;
   readonly "sticky": string;
   readonly "table": string;
   readonly "text-3xl": string;

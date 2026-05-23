@@ -440,6 +440,24 @@ export function App() {
   // The About view is always compact — no expanded layout when browsing About.
   const isExpanded = view === 'exporter' && showPreview && !isBoardTooLarge
 
+  // ── preview status dot ────────────────────────────────────────────────────
+  // State derives from liveResult so it always agrees with the rest of the UI.
+  // has-content → green/live (gentle 2 s pulse)
+  // loading     → amber/updating (quicker pulse; resolves when extract lands)
+  // idle/empty/error → grey/no-content (static)
+  const previewDotColor =
+    liveResult.kind === 'has-content' ? '#1a7a50'
+    : liveResult.kind === 'loading'   ? '#c47400'
+    : 'var(--figma-color-text-disabled)'
+  const previewDotClass =
+    liveResult.kind === 'has-content' ? 'status-dot-live'
+    : liveResult.kind === 'loading'   ? 'status-dot-updating'
+    : ''
+  const previewDotLabel =
+    liveResult.kind === 'has-content' ? 'live'
+    : liveResult.kind === 'loading'   ? 'updating'
+    : 'no content'
+
   return (
     <div ref={containerRef} class={isExpanded ? 'flex h-screen flex-col' : 'flex flex-col'}>
 
@@ -562,13 +580,18 @@ export function App() {
         <div class="flex min-h-0 flex-1 flex-col px-2 pb-3">
           {/* Bordered preview frame */}
           <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded border border-[var(--figma-color-border)]">
-            {/* Header strip: "Preview" label left, live indicator right */}
-            <div class="flex flex-shrink-0 items-center border-b border-[var(--figma-color-border)] bg-[var(--figma-color-bg-secondary)] px-2 py-[3px]">
+            {/* Header strip: "Preview" title + state-driven status dot, left-aligned.
+                 Dot states: green/live (has-content), amber/updating (loading),
+                 grey/no-content (idle | empty | error). Animations in input.css;
+                 suspended automatically via @media (prefers-reduced-motion: reduce). */}
+            <div class="flex flex-shrink-0 items-center gap-[5px] border-b border-[var(--figma-color-border)] bg-[var(--figma-color-bg-secondary)] px-2 py-[3px]">
               <span class="text-[10px] font-medium text-[var(--figma-color-text-secondary)]">Preview</span>
-              <div class="ml-auto flex items-center gap-[5px]">
-                <span class="h-[6px] w-[6px] rounded-full bg-[#1a7a50] opacity-80" />
-                <span class="text-[10px] text-[var(--figma-color-text-secondary)]">Live</span>
-              </div>
+              <span class="text-[10px] text-[var(--figma-color-text-disabled)]">·</span>
+              <span
+                class={`h-[6px] w-[6px] flex-shrink-0 rounded-full ${previewDotClass}`}
+                style={{ background: previewDotColor }}
+              />
+              <span class="text-[10px] text-[var(--figma-color-text-disabled)]">{previewDotLabel}</span>
             </div>
             {/* Preview text fills remaining height */}
             <PreviewPanel

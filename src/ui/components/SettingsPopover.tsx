@@ -2,6 +2,7 @@ import { h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { IconAdjust16, Toggle } from '@create-figma-plugin/ui'
 import type { Format } from '../../types'
+import { TOGGLE_HELPERS } from '../microcopy'
 
 /**
  * Content-toggle defaults — what the plugin ships with out of the box.
@@ -116,13 +117,15 @@ export function SettingsPopover({
         onClick={toggle}
         aria-expanded={open}
         aria-haspopup="dialog"
-        class="flex cursor-default items-center gap-1 rounded px-2 py-1 text-[11px] leading-none"
+        class={`flex cursor-default items-center gap-1 rounded border px-2 py-1 text-[11px] leading-none transition-colors${!isActive ? ' hover:bg-[var(--figma-color-bg-hover)]' : ''}`}
         style={isActive ? {
-          background: 'var(--figma-color-bg-selected)',
-          color:      'var(--figma-color-text-brand)',
+          background:  'var(--figma-color-bg-selected)',
+          color:       'var(--figma-color-text-brand)',
+          borderColor: 'var(--figma-color-border)',
         } : {
-          background: 'var(--figma-color-bg-secondary)',
-          color:      'var(--figma-color-text-secondary)',
+          background:  'var(--figma-color-bg-secondary)',
+          color:       'var(--figma-color-text-secondary)',
+          borderColor: 'var(--figma-color-border)',
         }}
       >
         <IconAdjust16 />
@@ -143,19 +146,28 @@ export function SettingsPopover({
             boxShadow: '0 4px 12px rgba(0,0,0,0.14)',
           }}
         >
-          <div class="flex flex-col gap-2 px-2 pb-3 pt-2">
+          <div class="flex flex-col gap-3 px-2 pb-3 pt-2">
             <span class="px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--figma-color-text-secondary)]">
               Content
             </span>
-            <Toggle value={includeVotes} onValueChange={onIncludeVotesChange}>
-              Include votes
-            </Toggle>
-            <Toggle value={includeSections} onValueChange={onIncludeSectionsChange}>
-              Include section hierarchy
-            </Toggle>
-            <Toggle value={includeAuthors} onValueChange={onIncludeAuthorsChange}>
-              Include author names
-            </Toggle>
+            <div class="flex flex-col gap-0.5">
+              <Toggle value={includeVotes} onValueChange={onIncludeVotesChange}>
+                Include votes
+              </Toggle>
+              <p class="px-1 text-[10px] text-[var(--figma-color-text-disabled)]">{TOGGLE_HELPERS.includeVotes}</p>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <Toggle value={includeSections} onValueChange={onIncludeSectionsChange}>
+                Include section hierarchy
+              </Toggle>
+              <p class="px-1 text-[10px] text-[var(--figma-color-text-disabled)]">{TOGGLE_HELPERS.includeSections}</p>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <Toggle value={includeAuthors} onValueChange={onIncludeAuthorsChange}>
+                Include author names
+              </Toggle>
+              <p class="px-1 text-[10px] text-[var(--figma-color-text-disabled)]">{TOGGLE_HELPERS.includeAuthors}</p>
+            </div>
             {format === 'csv' && (
               <Toggle value={csvExpandTables} onValueChange={onCsvExpandTablesChange}>
                 Expand tables to rows

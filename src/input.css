@@ -1,2 +1,32 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
+
+/* ── Preview status dot pulse animations ─────────────────────────────────────
+   Two speeds: gentle 2 s for the settled live state; quicker 0.75 s for the
+   transient updating state. Grey (no-content) has no animation class.
+   Both animations are suspended when the user prefers reduced motion.
+────────────────────────────────────────────────────────────────────────────── */
+@keyframes dot-pulse-live {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+@keyframes dot-pulse-updating {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+.status-dot-live {
+  animation: dot-pulse-live 2s ease-in-out infinite;
+}
+
+.status-dot-updating {
+  animation: dot-pulse-updating 0.75s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-dot-live,
+  .status-dot-updating {
+    animation: none;
+  }
+}

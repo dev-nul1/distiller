@@ -20,6 +20,7 @@
     --leading-relaxed: 1.625;
     --radius-xl: 0.75rem;
     --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
     --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     --default-transition-duration: 150ms;
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -335,6 +336,12 @@
   .justify-center {
     justify-content: center;
   }
+  .gap-0 {
+    gap: calc(var(--spacing) * 0);
+  }
+  .gap-0\.5 {
+    gap: calc(var(--spacing) * 0.5);
+  }
   .gap-1 {
     gap: calc(var(--spacing) * 1);
   }
@@ -481,6 +488,9 @@
   .pl-2 {
     padding-left: calc(var(--spacing) * 2);
   }
+  .pl-\[92px\] {
+    padding-left: 92px;
+  }
   .text-center {
     text-align: center;
   }
@@ -584,6 +594,10 @@
     --tw-ease: var(--ease-in);
     transition-timing-function: var(--ease-in);
   }
+  .ease-in-out {
+    --tw-ease: var(--ease-in-out);
+    transition-timing-function: var(--ease-in-out);
+  }
   .outline-none {
     --tw-outline-style: none;
     outline-style: none;
@@ -609,6 +623,33 @@
         color: var(--figma-color-text);
       }
     }
+  }
+}
+@keyframes dot-pulse-live {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+@keyframes dot-pulse-updating {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+.status-dot-live {
+  animation: dot-pulse-live 2s ease-in-out infinite;
+}
+.status-dot-updating {
+  animation: dot-pulse-updating 0.75s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .status-dot-live, .status-dot-updating {
+    animation: none;
   }
 }
 @property --tw-rotate-x {
