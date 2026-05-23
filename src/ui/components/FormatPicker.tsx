@@ -18,7 +18,7 @@ type Props = {
 
 export function FormatPicker({ value, onValueChange }: Props) {
   return (
-    <div class="flex flex-col gap-1 px-2">
+    <div class="flex flex-col gap-1 pl-3 pr-6">
       <div class="flex items-center gap-3">
         <span class="w-20 shrink-0 text-[11px] text-[var(--figma-color-text)]">
           Format

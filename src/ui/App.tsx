@@ -482,19 +482,22 @@ export function App() {
 
         {/* Clipboard error — persistent inline warning (rare; clipboard API failure) */}
         {clipError && (
-          <div class="px-2">
+          <div class="px-3">
             <Banner icon={<IconWarning16 />} variant="warning">
               {clipError}
             </Banner>
           </div>
         )}
 
+        {/* Full-bleed zone divider: separates inputs (mode/format) from preview controls. */}
+        <Divider />
+
         {/* Preview + settings row: Show preview toggle left, Options gear button right */}
-        <div class="flex items-center px-2">
+        <div class="flex items-center px-3">
           <Toggle value={showPreview} onValueChange={setShowPreview}>
             Show preview
           </Toggle>
-          <div class="ml-auto pl-2">
+          <div class="ml-auto">
             <SettingsPopover
               format={format}
               includeVotes={includeVotes}

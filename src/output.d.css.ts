@@ -5,9 +5,11 @@ declare const styles: {
   readonly "bg-[var(--figma-color-border)]": string;
   readonly "block": string;
   readonly "border": string;
+  readonly "border-0": string;
   readonly "border-[var(--figma-color-border)]": string;
   readonly "border-b": string;
   readonly "border-collapse": string;
+  readonly "border-t": string;
   readonly "bottom-[60px]": string;
   readonly "contents": string;
   readonly "cursor-default": string;
@@ -82,8 +84,10 @@ declare const styles: {
   readonly "pb-4": string;
   readonly "pb-5": string;
   readonly "pl-2": string;
+  readonly "pl-3": string;
   readonly "pl-[92px]": string;
   readonly "pointer-events-none": string;
+  readonly "pr-6": string;
   readonly "pt-1": string;
   readonly "pt-2": string;
   readonly "pt-3": string;
@@ -139,6 +143,7 @@ declare const styles: {
   readonly "visible": string;
   readonly "w-12": string;
   readonly "w-20": string;
+  readonly "w-40": string;
   readonly "w-8": string;
   readonly "w-[6px]": string;
   readonly "w-full": string;

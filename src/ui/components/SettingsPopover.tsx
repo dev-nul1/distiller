@@ -4,6 +4,64 @@ import { IconAdjust16, Toggle } from '@create-figma-plugin/ui'
 import type { Format } from '../../types'
 import { TOGGLE_HELPERS } from '../microcopy'
 
+// ─── placement ─────────────────────────────────────────────────────────────
+
+/**
+ * Conservative upper bound on the popover's rendered height (px).
+ * Covers: "Content" label + 3 toggle+helper groups + optional CSV toggle + padding/gaps.
+ * Used to choose placement before the popover mounts so the first paint lands at the
+ * correct position — no measure-then-reposition pass, no one-frame flash.
+ */
+const POPOVER_ESTIMATED_HEIGHT = 260
+/** Gap (px) between the trigger edge and the nearest popover edge. */
+const POPOVER_GAP = 4
+/** Minimum gap (px) between the popover edge and the window edge. */
+const WINDOW_MARGIN = 8
+
+/** Computed position for the popover. maxHeight is defined only when the backstop engages. */
+type PopoverPos = { top: number; right: number; maxHeight?: number }
+
+/**
+ * Choose the best placement for the popover without mounting it first.
+ *
+ * Priority:
+ *   1. Below the trigger, right-aligned — preferred; fits in expanded (preview-on) mode.
+ *   2. Above the trigger, right-aligned — if below would clip the window bottom.
+ *   3. Left of the trigger, vertically centered + clamped — compact (preview-off) mode,
+ *      where the window is too short for above/below but horizontal space is ample.
+ *
+ * If even the best placement can't fit the full estimated height, a maxHeight backstop
+ * is returned; the caller applies overflow-y:auto so content scrolls internally instead
+ * of being clipped by the iframe edge. Should not engage with current 3–4 toggles.
+ */
+function computePlacement(rect: DOMRect): PopoverPos {
+  const winH = window.innerHeight
+  const winW = window.innerWidth
+  const popH = POPOVER_ESTIMATED_HEIGHT
+
+  // 1. Below
+  if (rect.bottom + POPOVER_GAP + popH + WINDOW_MARGIN <= winH) {
+    return { top: rect.bottom + POPOVER_GAP, right: winW - rect.right }
+  }
+  // 2. Above
+  if (rect.top - POPOVER_GAP - popH - WINDOW_MARGIN >= 0) {
+    return { top: rect.top - POPOVER_GAP - popH, right: winW - rect.right }
+  }
+  // 3. Left — vertically centered on the trigger, clamped to window bounds.
+  // Used when the window is too short for above or below (compact/preview-off mode).
+  const centerY = rect.top + rect.height / 2
+  const idealTop = centerY - popH / 2
+  const clampedTop = Math.max(WINDOW_MARGIN, Math.min(winH - popH - WINDOW_MARGIN, idealTop))
+  const available = winH - clampedTop - WINDOW_MARGIN
+  if (available < popH) {
+    // Backstop: cap and enable internal scroll so content is never clipped by the iframe.
+    return { top: clampedTop, right: winW - rect.left + POPOVER_GAP, maxHeight: available }
+  }
+  return { top: clampedTop, right: winW - rect.left + POPOVER_GAP }
+}
+
+// ─── defaults / types ──────────────────────────────────────────────────────
+
 /**
  * Content-toggle defaults — what the plugin ships with out of the box.
  * The active-state cue is computed against these values, so it correctly
@@ -41,7 +99,7 @@ export function SettingsPopover({
   onIncludeAuthorsChange,
 }: Props) {
   const [open, setOpen] = useState(false)
-  const [popoverPos, setPopoverPos] = useState<{ top: number; right: number } | null>(null)
+  const [popoverPos, setPopoverPos] = useState<PopoverPos | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
 
@@ -64,13 +122,7 @@ export function SettingsPopover({
     }
     const rect = triggerRef.current?.getBoundingClientRect()
     if (rect) {
-      // Position fixed below the trigger, right-aligned to its right edge.
-      // The panel is narrow (400 px) so right-alignment keeps the popover
-      // within bounds naturally — no flip logic needed here.
-      setPopoverPos({
-        top:   rect.bottom + 4,
-        right: window.innerWidth - rect.right,
-      })
+      setPopoverPos(computePlacement(rect))
     }
     setOpen(true)
   }
@@ -107,6 +159,15 @@ export function SettingsPopover({
     }
   }, [open])
 
+  // Close when the window resizes so a stale fixed position cannot strand the popover.
+  // Window height changes when Show preview is toggled — closing avoids reposition-while-visible flicker.
+  useEffect(() => {
+    if (!open) return
+    function onResize() { setOpen(false) }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [open])
+
   const label = isActive ? `Options · ${nonDefaultCount}` : 'Options'
 
   return (
@@ -137,6 +198,9 @@ export function SettingsPopover({
           ref={popoverRef}
           role="dialog"
           aria-label="Options"
+          // position:fixed anchors to the iframe viewport because no ancestor has
+          // transform/filter/will-change. If any ancestor ever gains one of those CSS
+          // properties, fixed positioning will silently break and placement must be revisited.
           class="fixed z-40 min-w-[196px] rounded"
           style={{
             top:       popoverPos.top,
@@ -144,6 +208,10 @@ export function SettingsPopover({
             background: 'var(--figma-color-bg)',
             border:    '1px solid var(--figma-color-border)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.14)',
+            ...(popoverPos.maxHeight !== undefined ? {
+              maxHeight: popoverPos.maxHeight,
+              overflowY: 'auto' as const,
+            } : {}),
           }}
         >
           <div class="flex flex-col gap-3 px-2 pb-3 pt-2">

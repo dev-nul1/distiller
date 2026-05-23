@@ -17,7 +17,7 @@ type Props = {
 
 export function ModePicker({ value, onValueChange }: Props) {
   return (
-    <div class="flex items-center gap-3 px-2">
+    <div class="flex items-center gap-3 pl-3 pr-6">
       <span class="w-20 shrink-0 text-[11px] text-[var(--figma-color-text)]">
         Extract from
       </span>
