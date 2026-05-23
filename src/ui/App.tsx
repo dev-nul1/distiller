@@ -64,7 +64,11 @@ function mimeType(format: Format): string {
 }
 
 function safeFilename(ir: Parameters<typeof renderMarkdown>[0], format: Format): string {
-  const page = ir.meta.pageName.replace(/[^a-z0-9_\-]/gi, '_').toLowerCase()
+  const page = ir.meta.pageName
+    .replace(/[^a-z0-9_\-]/gi, '_')
+    .toLowerCase()
+    .replace(/_+/g, '_')
+    .replace(/^[_\-]+|[_\-]+$/g, '') || 'export'
   return `${page}.${fileExtension(format)}`
 }
 

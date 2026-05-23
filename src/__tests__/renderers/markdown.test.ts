@@ -33,8 +33,10 @@ describe('renderMarkdown – empty IR', () => {
 })
 
 describe('renderMarkdown – single orphan, no section', () => {
-  it('renders as a bullet item', () => {
-    expect(renderMarkdown(singleOrphanIR, {})).toBe('- Hello world')
+  it('renders with a Sticky heading and content', () => {
+    const out = renderMarkdown(singleOrphanIR, {})
+    expect(out).toContain('### Sticky')
+    expect(out).toContain('Hello world')
   })
 })
 
@@ -45,11 +47,18 @@ describe('renderMarkdown – flat sections', () => {
     expect(out).toContain('## Beta')
   })
 
-  it('renders items as bullet points', () => {
+  it('renders items with block headings', () => {
     const out = renderMarkdown(flatSectionsIR(), {})
-    expect(out).toContain('- A1')
-    expect(out).toContain('- A2')
-    expect(out).toContain('- B1')
+    expect(out).toContain('### Sticky')
+    expect(out).toContain('A1')
+    expect(out).toContain('A2')
+    expect(out).toContain('B1')
+  })
+
+  it('separates items within a section with a blank line', () => {
+    const out = renderMarkdown(flatSectionsIR(), {})
+    // A1 and A2 should be separated by a blank line
+    expect(out).toMatch(/A1\n\n### Sticky/)
   })
 
   it('separates sections with a blank line', () => {
@@ -100,10 +109,8 @@ describe('renderMarkdown – votes', () => {
 
   it('omits suffix when includeVotes is false', () => {
     const out = renderMarkdown(votesIR(), { includeVotes: false })
-    // Check that no "*(N votes)*" suffix appears.
-    // Note: item content "No votes idea" contains the word "votes" – that's expected.
     expect(out).not.toMatch(/\*\(\d+ votes?\)\*/)
-    expect(out).toContain('- Top idea')
+    expect(out).toContain('Top idea')
   })
 })
 
@@ -141,11 +148,11 @@ describe('renderMarkdown – special characters', () => {
     expect(out).toContain('A\\|B')
   })
 
-  it('does not escape special chars in regular bullet items', () => {
+  it('does not escape special chars in regular items', () => {
     const out = renderMarkdown(specialCharsIR(), {})
-    expect(out).toContain('- Pipe | character')
-    expect(out).toContain('- Has a "quoted" word')
-    expect(out).toContain('- Comma, separated, text')
+    expect(out).toContain('Pipe | character')
+    expect(out).toContain('Has a "quoted" word')
+    expect(out).toContain('Comma, separated, text')
   })
 })
 
@@ -177,10 +184,11 @@ describe('renderMarkdown – rich text inline', () => {
     expect(out).toContain(' for ')
   })
 
-  it('adds outer bullet when no list structure', () => {
+  it('adds block heading (no outer bullet)', () => {
     const ir = makeIR({ orphans: [richInlineItem()] })
     const out = renderMarkdown(ir, {})
-    expect(out).toMatch(/^- /)
+    expect(out).toMatch(/^### Sticky/)
+    expect(out).not.toMatch(/^- /)
   })
 })
 
@@ -243,5 +251,56 @@ describe('renderMarkdown – code blocks', () => {
 describe('renderMarkdown – rich section snapshot', () => {
   it('matches snapshot', () => {
     expect(renderMarkdown(richSectionIR(), {})).toMatchSnapshot()
+  })
+})
+
+describe('renderMarkdown – author in heading', () => {
+  it('includes author in heading when includeAuthors is true', () => {
+    resetIds()
+    const ir = makeIR({
+      orphans: [makeItem({ content: 'Hello', author: 'Alice' })],
+    })
+    const out = renderMarkdown(ir, { includeAuthors: true })
+    expect(out).toContain('### Sticky (Alice)')
+    expect(out).not.toContain('– *Alice*')
+  })
+
+  it('omits author from heading when includeAuthors is false', () => {
+    resetIds()
+    const ir = makeIR({
+      orphans: [makeItem({ content: 'Hello', author: 'Alice' })],
+    })
+    const out = renderMarkdown(ir, { includeAuthors: false })
+    expect(out).toContain('### Sticky')
+    expect(out).not.toContain('Alice')
+  })
+
+  it('omits author part when author is absent', () => {
+    resetIds()
+    const ir = makeIR({
+      orphans: [makeItem({ content: 'Hello' })],
+    })
+    const out = renderMarkdown(ir, { includeAuthors: true })
+    expect(out).toContain('### Sticky')
+    expect(out).not.toContain('()')
+  })
+
+  it('items in depth-0 sections get ### heading', () => {
+    resetIds()
+    const ir = makeIR({
+      sections: [makeSection('S', 0, [makeItem({ content: 'x' })])],
+    })
+    const out = renderMarkdown(ir, {})
+    expect(out).toContain('### Sticky')
+  })
+
+  it('items in depth-1 sections get #### heading', () => {
+    resetIds()
+    const child = makeSection('Child', 1, [makeItem({ content: 'x' })])
+    const ir = makeIR({
+      sections: [makeSection('Parent', 0, [], [child])],
+    })
+    const out = renderMarkdown(ir, {})
+    expect(out).toContain('#### Sticky')
   })
 })

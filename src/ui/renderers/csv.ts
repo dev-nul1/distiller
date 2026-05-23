@@ -30,7 +30,8 @@ function itemRow(
   if (contentOverride !== undefined) {
     cellContent = contentOverride
   } else if (item.kind === 'code' && item.codeData) {
-    cellContent = item.codeData.code
+    const lineCount = item.codeData.code.split('\n').length
+    cellContent = `[code block omitted \u2013 ${lineCount} ${lineCount === 1 ? 'line' : 'lines'}; use Markdown export]`
   } else if (item.richContent) {
     cellContent = renderRichRuns(item.richContent, 'plain')
   } else {

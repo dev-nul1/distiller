@@ -54,9 +54,10 @@ describe('renderLlm – markdown body', () => {
     expect(out).toContain('## Beta')
   })
 
-  it('renders bullet items', () => {
+  it('renders block items with headings', () => {
     const out = renderLlm(singleOrphanIR, {})
-    expect(out).toContain('- Hello world')
+    expect(out).toContain('### Sticky')
+    expect(out).toContain('Hello world')
   })
 
   it('passes votes through to markdown renderer as plain text (plainMeta mode)', () => {
@@ -69,7 +70,7 @@ describe('renderLlm – markdown body', () => {
   it('respects includeVotes: false', () => {
     const out = renderLlm(votesIR(), { includeVotes: false })
     expect(out).not.toContain('votes)')
-    expect(out).toContain('- Top idea')
+    expect(out).toContain('Top idea')
   })
 
   it('nested sections render as ### after the preamble', () => {

@@ -3,7 +3,10 @@
 exports[`renderMarkdown – rich section snapshot > matches snapshot 1`] = `
 "## Ideas
 
-- Important: **check the docs** for *~~details~~*
+### Sticky
+Important: **check the docs** for *~~details~~*
+
+### Sticky
 - Idea Alpha
 - Idea Beta
 - Idea Gamma"
@@ -12,24 +15,42 @@ exports[`renderMarkdown – rich section snapshot > matches snapshot 1`] = `
 exports[`renderMarkdown – snapshot (medium fixture) > matches snapshot 1`] = `
 "## Went Well
 
-- Fast CI pipeline *(4 votes)*
-- Great collaboration *(3 votes)*
-- Clear sprint goal *(1 vote)*
+### Sticky
+Fast CI pipeline *(4 votes)*
+
+### Sticky
+Great collaboration *(3 votes)*
+
+### Sticky
+Clear sprint goal *(1 vote)*
 
 ## To Improve
 
-- Too many meetings *(5 votes)*
-- Unclear requirements *(2 votes)*
-- Flaky tests *(1 vote)*
+### Sticky
+Too many meetings *(5 votes)*
+
+### Sticky
+Unclear requirements *(2 votes)*
+
+### Sticky
+Flaky tests *(1 vote)*
 
 ### Subgroup
 
-- Nested sticky A *(2 votes)*
-- Nested sticky B
+#### Sticky
+Nested sticky A *(2 votes)*
+
+#### Sticky
+Nested sticky B
 
 ## Action Items
 
-- Schedule fewer standups
-- Write acceptance criteria
-- Fix flaky test suite"
+### Sticky
+Schedule fewer standups
+
+### Sticky
+Write acceptance criteria
+
+### Sticky
+Fix flaky test suite"
 `;

@@ -243,13 +243,19 @@ describe('renderCsv – code blocks', () => {
     expect(rows[1][1]).toBe('code')
   })
 
-  it('puts raw code text in the content cell', () => {
+  it('puts a signpost message instead of raw code', () => {
     const rows = parseCsv(renderCsv(codeIR(), {}))
-    expect(rows[1][2]).toContain('function greet')
+    expect(rows[1][2]).toMatch(/\[code block omitted/)
+    expect(rows[1][2]).toContain('use Markdown export')
   })
 
   it('does not include fencing in CSV content', () => {
     const rows = parseCsv(renderCsv(codeIR(), {}))
     expect(rows[1][2]).not.toContain('```')
+  })
+
+  it('does not include raw code in CSV content', () => {
+    const rows = parseCsv(renderCsv(codeIR(), {}))
+    expect(rows[1][2]).not.toContain('function greet')
   })
 })

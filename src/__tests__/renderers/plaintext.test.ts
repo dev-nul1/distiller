@@ -18,6 +18,8 @@ import {
   richOrderedListItem,
   richMixedItem,
   makeIR,
+  makeItem,
+  makeSection,
   resetIds,
 } from './fixtures'
 
@@ -30,21 +32,29 @@ describe('renderPlaintext – empty IR', () => {
 })
 
 describe('renderPlaintext – single orphan, no section', () => {
-  it('renders content as a top-level bullet', () => {
+  it('renders with a label line and content', () => {
     const out = renderPlaintext(singleOrphanIR, {})
-    expect(out).toBe('- Hello world')
+    expect(out).toContain('Sticky')
+    expect(out).toContain('Hello world')
   })
 })
 
 describe('renderPlaintext – flat sections', () => {
-  it('renders section titles and items', () => {
+  it('renders section titles and items with labels', () => {
     const out = renderPlaintext(flatSectionsIR(), {})
     const lines = out.split('\n')
     expect(lines).toContain('Alpha')
-    expect(lines).toContain('  - A1')
-    expect(lines).toContain('  - A2')
     expect(lines).toContain('Beta')
-    expect(lines).toContain('  - B1')
+    // Items appear as label + indented content
+    expect(out).toContain('A1')
+    expect(out).toContain('A2')
+    expect(out).toContain('B1')
+  })
+
+  it('separates items within a section with a blank line', () => {
+    const out = renderPlaintext(flatSectionsIR(), {})
+    // Blank line should appear between item blocks within Alpha section
+    expect(out).toMatch(/A1\n\n  Sticky/)
   })
 
   it('separates sections with a blank line', () => {
@@ -68,11 +78,12 @@ describe('renderPlaintext – nested sections', () => {
 
   it('indents child items deeper than parent items', () => {
     const out = renderPlaintext(nestedSectionsIR(), {})
-    const lines = out.split('\n')
-    const parentItem = lines.find((l) => l.includes('Parent item'))
-    const childItem = lines.find((l) => l.includes('Child item'))
-    expect(parentItem).toMatch(/^  - /)   // depth 0 items: 2 spaces
-    expect(childItem).toMatch(/^    - /)  // depth 1 items: 4 spaces
+    // Label lines: depth-0 items at 2 spaces, depth-1 items at 4 spaces
+    expect(out).toContain('  Sticky')   // depth-0 label
+    expect(out).toContain('    Sticky') // depth-1 label
+    // Content lines one level deeper
+    expect(out).toContain('    Parent item')  // depth-0 content at 4 spaces
+    expect(out).toContain('      Child item') // depth-1 content at 6 spaces
   })
 })
 
@@ -91,15 +102,12 @@ describe('renderPlaintext – votes', () => {
 
   it('omits votes when includeVotes is false', () => {
     const out = renderPlaintext(votesIR(), { includeVotes: false })
-    // Check that no vote-count suffix like "(5 votes)" or "(1 vote)" appears.
-    // Note: item content "No votes idea" contains the word "votes" – that's fine.
     expect(out).not.toMatch(/\(\d+ votes?\)/)
   })
 
   it('omits suffix on items with no votes', () => {
     const out = renderPlaintext(votesIR(), {})
-    // The item with no votes should appear without any "(N votes)" suffix.
-    expect(out).toContain('- No votes idea')
+    expect(out).toContain('No votes idea')
     expect(out).not.toMatch(/No votes idea \(\d+ votes?\)/)
   })
 })
@@ -180,8 +188,8 @@ describe('renderPlaintext – rich text lists', () => {
   it('renders mixed bold+list without markup syntax', () => {
     const ir = makeIR({ orphans: [richMixedItem()] })
     const out = renderPlaintext(ir, {})
-    expect(out).toContain('- Do this')
-    expect(out).toContain('- Also do that')
+    expect(out).toContain('Do this')
+    expect(out).toContain('Also do that')
     expect(out).not.toContain('**')
     expect(out).not.toContain('*that*')
   })
@@ -198,5 +206,35 @@ describe('renderPlaintext – code blocks', () => {
     const out = renderPlaintext(codeNoLangIR(), {})
     expect(out).toContain('hello world')
     expect(out).not.toContain('```')
+  })
+})
+
+describe('renderPlaintext – author in label', () => {
+  it('includes author with em dash when includeAuthors is true', () => {
+    resetIds()
+    const ir = makeIR({
+      orphans: [makeItem({ content: 'Hello', author: 'Alice' })],
+    })
+    const out = renderPlaintext(ir, { includeAuthors: true })
+    expect(out).toContain('Sticky \u2014 Alice')
+  })
+
+  it('omits author when includeAuthors is false', () => {
+    resetIds()
+    const ir = makeIR({
+      orphans: [makeItem({ content: 'Hello', author: 'Alice' })],
+    })
+    const out = renderPlaintext(ir, { includeAuthors: false })
+    expect(out).not.toContain('Alice')
+    expect(out).not.toContain('\u2014')
+  })
+
+  it('omits em dash when author is absent', () => {
+    resetIds()
+    const ir = makeIR({
+      orphans: [makeItem({ content: 'Hello' })],
+    })
+    const out = renderPlaintext(ir, { includeAuthors: true })
+    expect(out).not.toContain('\u2014')
   })
 })

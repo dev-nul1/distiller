@@ -1,44 +1,48 @@
 import type { ExportIR, ExportItem, ExportSection, RenderOpts } from '../../types'
-import { renderRichRuns, hasListRuns, renderCodeFence } from './richtext'
+import { renderRichRuns, renderCodeFence } from './richtext'
 
 function voteSuffix(item: ExportItem, opts: RenderOpts): string {
-  const parts: string[] = []
-  if (opts.includeVotes !== false && item.votes) {
-    parts.push(`(${item.votes} ${item.votes === 1 ? 'vote' : 'votes'})`)
-  }
-  if (opts.includeAuthors && item.author) {
-    parts.push(`[${item.author}]`)
-  }
-  return parts.length ? ' ' + parts.join(' ') : ''
+  if (opts.includeVotes === false || !item.votes) return ''
+  return ` (${item.votes} ${item.votes === 1 ? 'vote' : 'votes'})`
 }
 
-function renderItems(
-  items: ExportItem[],
-  indent: string,
-  opts: RenderOpts
-): string[] {
-  return items.map((item) => {
-    const suffix = voteSuffix(item, opts)
-    if (item.kind === 'code' && item.codeData) {
-      // Code items: raw code text, indented, no bullet prefix
-      return renderCodeFence(item.codeData, 'plain')
-        .split('\n')
-        .map((line) => `${indent}${line}`)
-        .join('\n')
-    }
-    if (item.richContent) {
-      const body = renderRichRuns(item.richContent, 'plain')
-      if (hasListRuns(item.richContent)) {
-        // List structure: indent each line, no outer bullet
-        return body
-          .split('\n')
-          .map((line) => `${indent}${line}`)
-          .join('\n') + suffix
-      }
-      return `${indent}- ${body}${suffix}`
-    }
-    return `${indent}- ${item.content}${suffix}`
-  })
+const KIND_LABEL: Partial<Record<ExportItem['kind'], string>> = {
+  sticky: 'Sticky',
+  text: 'Text',
+  shape: 'Shape',
+}
+
+function renderItem(item: ExportItem, indent: string, opts: RenderOpts): string {
+  if (item.kind === 'code' && item.codeData) {
+    return renderCodeFence(item.codeData, 'plain')
+      .split('\n')
+      .map((line) => `${indent}${line}`)
+      .join('\n')
+  }
+  const label = KIND_LABEL[item.kind] ?? item.kind
+  const authorPart = (opts.includeAuthors && item.author) ? ` \u2014 ${item.author}` : ''
+  const labelLine = `${indent}${label}${authorPart}`
+  const suffix = voteSuffix(item, opts)
+  let body: string
+  if (item.richContent) {
+    body = renderRichRuns(item.richContent, 'plain')
+      .split('\n')
+      .map((line) => `${indent}  ${line}`)
+      .join('\n')
+  } else {
+    body = `${indent}  ${item.content}`
+  }
+  return `${labelLine}\n${body}${suffix}`
+}
+
+function renderItemsWithBlanks(items: ExportItem[], indent: string, opts: RenderOpts): string[] {
+  const blocks = items.map((item) => renderItem(item, indent, opts))
+  const result: string[] = []
+  for (let i = 0; i < blocks.length; i++) {
+    result.push(blocks[i])
+    if (i < blocks.length - 1) result.push('')
+  }
+  return result
 }
 
 function renderSection(section: ExportSection, opts: RenderOpts): string[] {
@@ -47,7 +51,10 @@ function renderSection(section: ExportSection, opts: RenderOpts): string[] {
   const lines: string[] = []
 
   lines.push(`${titleIndent}${section.title}`)
-  lines.push(...renderItems(section.items, itemIndent, opts))
+  if (section.items.length > 0) {
+    lines.push('')
+    lines.push(...renderItemsWithBlanks(section.items, itemIndent, opts))
+  }
 
   for (const child of section.children) {
     lines.push('')
@@ -65,13 +72,13 @@ function flattenSection(section: ExportSection): ExportItem[] {
 export function renderPlaintext(ir: ExportIR, opts: RenderOpts): string {
   if (opts.includeSections === false) {
     const all = [...ir.orphans, ...ir.sections.flatMap(flattenSection)]
-    return renderItems(all, '', opts).join('\n')
+    return renderItemsWithBlanks(all, '', opts).join('\n')
   }
 
   const parts: string[] = []
 
   if (ir.orphans.length > 0) {
-    parts.push(...renderItems(ir.orphans, '', opts))
+    parts.push(...renderItemsWithBlanks(ir.orphans, '', opts))
   }
 
   for (const section of ir.sections) {

@@ -5,7 +5,7 @@ import type {
   RenderOpts,
   TableData,
 } from '../../types'
-import { renderRichRuns, hasListRuns, renderCodeFence } from './richtext'
+import { renderRichRuns, renderCodeFence } from './richtext'
 
 /** depth 0 → ##, depth 1 → ###, …, capped at ###### */
 function headingLevel(depth: number): string {
@@ -13,15 +13,29 @@ function headingLevel(depth: number): string {
 }
 
 function voteSuffix(item: ExportItem, opts: RenderOpts): string {
-  const parts: string[] = []
-  if (opts.includeVotes !== false && item.votes) {
-    const vStr = `${item.votes} ${item.votes === 1 ? 'vote' : 'votes'}`
-    parts.push(opts.plainMeta ? `(${vStr})` : `*(${vStr})*`)
-  }
-  if (opts.includeAuthors && item.author) {
-    parts.push(opts.plainMeta ? `\u2013 ${item.author}` : `\u2013 *${item.author}*`)
-  }
-  return parts.length ? ' ' + parts.join(' ') : ''
+  if (opts.includeVotes === false || !item.votes) return ''
+  const vStr = `${item.votes} ${item.votes === 1 ? 'vote' : 'votes'}`
+  return ' ' + (opts.plainMeta ? `(${vStr})` : `*(${vStr})*`)
+}
+
+/** Map item kind to a display label for the block heading. */
+const KIND_LABEL: Partial<Record<ExportItem['kind'], string>> = {
+  sticky: 'Sticky',
+  text: 'Text',
+  shape: 'Shape',
+}
+
+/**
+ * Build the block-level heading for an item.
+ * sectionDepth is the depth of the containing section (use 0 for orphans).
+ * Tables and code blocks don't get a heading.
+ */
+function itemHeading(item: ExportItem, sectionDepth: number, opts: RenderOpts): string {
+  const label = KIND_LABEL[item.kind]
+  if (!label) return ''
+  const hashes = '#'.repeat(Math.min(sectionDepth + 3, 6))
+  const authorPart = (opts.includeAuthors && item.author) ? ` (${item.author})` : ''
+  return `${hashes} ${label}${authorPart}`
 }
 
 /** Escape pipe characters inside a table cell. */
@@ -60,21 +74,22 @@ function renderMarkdownTable(tableData: TableData): string {
   return lines.join('\n')
 }
 
-function renderItem(item: ExportItem, opts: RenderOpts): string {
+function renderItem(item: ExportItem, opts: RenderOpts, sectionDepth: number): string {
   if (item.kind === 'table' && item.tableData) {
     return renderMarkdownTable(item.tableData)
   }
   if (item.kind === 'code' && item.codeData) {
     return renderCodeFence(item.codeData, 'markup')
   }
+  const heading = itemHeading(item, sectionDepth, opts)
   const suffix = voteSuffix(item, opts)
+  let body: string
   if (item.richContent) {
-    const body = renderRichRuns(item.richContent, 'markup')
-    // When the body already contains list structure, skip the outer '- ' bullet.
-    if (hasListRuns(item.richContent)) return body + suffix
-    return `- ${body}${suffix}`
+    body = renderRichRuns(item.richContent, 'markup')
+  } else {
+    body = item.content
   }
-  return `- ${item.content}${suffix}`
+  return `${heading}\n${body}${suffix}`
 }
 
 function renderSection(section: ExportSection, opts: RenderOpts): string[] {
@@ -83,8 +98,10 @@ function renderSection(section: ExportSection, opts: RenderOpts): string[] {
   lines.push(`${headingLevel(section.depth)} ${section.title}`)
   lines.push('')
 
-  for (const item of section.items) {
-    lines.push(renderItem(item, opts))
+  const itemBlocks = section.items.map((item) => renderItem(item, opts, section.depth))
+  for (let i = 0; i < itemBlocks.length; i++) {
+    lines.push(itemBlocks[i])
+    if (i < itemBlocks.length - 1) lines.push('')
   }
 
   for (const child of section.children) {
@@ -103,13 +120,13 @@ function flattenSection(section: ExportSection): ExportItem[] {
 export function renderMarkdown(ir: ExportIR, opts: RenderOpts): string {
   if (opts.includeSections === false) {
     const all = [...ir.orphans, ...ir.sections.flatMap(flattenSection)]
-    return all.map((item) => renderItem(item, opts)).join('\n').trimEnd()
+    return all.map((item) => renderItem(item, opts, 0)).join('\n\n').trimEnd()
   }
 
   const parts: string[] = []
 
   for (const orphan of ir.orphans) {
-    parts.push(renderItem(orphan, opts))
+    parts.push(renderItem(orphan, opts, 0))
   }
 
   for (const section of ir.sections) {
