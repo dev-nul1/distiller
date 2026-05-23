@@ -1,6 +1,20 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
+/* ── @create-figma-plugin/ui Button hover states ────────────────────────────
+   The library defines :active but no :hover. These rules add the missing hover
+   state using the correct Figma design tokens so all themes are handled.
+   Selectors target compiled CSS module classes. Hash "avmy7" is derived from
+   button.module.css — stable within this library version. If the library is
+   updated, re-inspect build/ui.js for the new hash and update here.
+──────────────────────────────────────────────────────────────────────────────  */
+._default_avmy7_33:not(._disabled_avmy7_11) button:hover {
+  background-color: var(--figma-color-bg-brand-hover);
+}
+._secondary_avmy7_68:not(._disabled_avmy7_11) button:hover {
+  background-color: var(--figma-color-bg-hover);
+}
+
 /* ── Preview status dot pulse animations ─────────────────────────────────────
    Two speeds: gentle 2 s for the settled live state; quicker 0.75 s for the
    transient updating state. Grey (no-content) has no animation class.

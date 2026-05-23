@@ -1,4 +1,7 @@
 declare const styles: {
+  readonly "_default_avmy7_33": string;
+  readonly "_disabled_avmy7_11": string;
+  readonly "_secondary_avmy7_68": string;
   readonly "animate-pulse": string;
   readonly "bg-[#1a7a50]": string;
   readonly "bg-[var(--figma-color-bg-secondary)]": string;

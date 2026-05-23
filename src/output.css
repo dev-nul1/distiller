@@ -683,6 +683,12 @@
     }
   }
 }
+._default_avmy7_33:not(._disabled_avmy7_11) button:hover {
+  background-color: var(--figma-color-bg-brand-hover);
+}
+._secondary_avmy7_68:not(._disabled_avmy7_11) button:hover {
+  background-color: var(--figma-color-bg-hover);
+}
 @keyframes dot-pulse-live {
   0%, 100% {
     opacity: 1;
