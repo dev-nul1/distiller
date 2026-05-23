@@ -361,6 +361,14 @@ export function App() {
   // absent, so the window should be small regardless of showPreview.
   useLayoutEffect(() => {
     if (!settingsReady) return
+    // About view sizes to its own content, independent of exporter state.
+    // Use EXPANDED_HEIGHT as the ceiling so the full panel is never clipped.
+    if (view === 'about') {
+      const h = containerRef.current?.scrollHeight ?? COMPACT_MIN_HEIGHT
+      const clamped = Math.max(COMPACT_MIN_HEIGHT, Math.min(EXPANDED_HEIGHT, h + COMPACT_HEIGHT_BUFFER))
+      emit<ResizeWindowHandler>('RESIZE_WINDOW', { width: PANEL_WIDTH, height: clamped })
+      return
+    }
     const isExpandedNow = showPreview && !isBoardTooLarge
     if (isExpandedNow) {
       emit<ResizeWindowHandler>('RESIZE_WINDOW', { width: PANEL_WIDTH, height: EXPANDED_HEIGHT })

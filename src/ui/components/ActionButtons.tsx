@@ -30,7 +30,7 @@ export function ActionButtons({ showPreview, onCopy, onDownload, onOpenAbout, lo
           Download
         </Button>
       </div>
-      <IconButton onClick={onOpenAbout} title="About">
+      <IconButton onClick={onOpenAbout} title="Help & feedback">
         <IconHelp16 />
       </IconButton>
     </div>
