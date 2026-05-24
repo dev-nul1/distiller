@@ -12,7 +12,11 @@
     "@figma/eslint-plugin-figma-plugins": "*",
     "@figma/plugin-typings": "1.109.0",
     "@tailwindcss/cli": ">=4",
+    "@typescript-eslint/eslint-plugin": "^8.59.4",
+    "@typescript-eslint/parser": "^8.59.4",
     "concurrently": ">=9",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "tailwindcss": ">=4",
     "typescript": ">=5",
     "vitest": "^3.2.4"
@@ -24,6 +28,7 @@
     "watch": "npm run build:css && concurrently npm:watch:css npm:watch:js",
     "watch:css": "npx @tailwindcss/cli --input ./src/input.css --output ./src/output.css --watch",
     "watch:js": "build-figma-plugin --typecheck --watch",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "test": "vitest run"
   },
   "figma-plugin": {
