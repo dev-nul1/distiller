@@ -4,6 +4,7 @@ import { Button, Divider, IconChevronRight16 } from '@create-figma-plugin/ui'
 import { emit } from '@create-figma-plugin/utilities'
 import type { OpenExternalHandler } from '../../events'
 import pkg from '../../../package.json'
+import { DistillerLogo } from '../assets/distiller-logo'
 
 // ── External URL constants — fill in before publish ───────────────────────────
 // TODO: replace placeholder Community URL after plugin is listed on Figma Community
@@ -13,7 +14,11 @@ const VIEW_SOURCE_URL    = 'https://github.com/dev-nul1/figjam-exporter'
 
 // ── Author ────────────────────────────────────────────────────────────────────
 const AUTHOR_NAME = 'Philip Scheid'
-const AUTHOR_ROLE = 'Author & maintainer'
+
+// ── Logo ─────────────────────────────────────────────────────────────────────
+// Corner radius of the logo container in px. Adjust here to restyle; the
+// container's overflow:hidden ensures the logo is clipped to this radius.
+const LOGO_CORNER_RADIUS = 12   // matches rounded-xl (0.75rem)
 
 // ── Plugin name strings ───────────────────────────────────────────────────────
 // Full name: en dash – (U+2013) between brand and descriptor. Keep exact.
@@ -115,11 +120,11 @@ export function AboutView({ onBack }: Props) {
       {/* ── identity block ────────────────────────────────────────────────── */}
       <div class="flex flex-col items-center gap-2 px-4 pt-6 pb-4">
         <div
-          class="flex h-12 w-12 items-center justify-center rounded-xl text-[17px] font-bold tracking-tight text-white"
-          style={{ background: 'var(--figma-color-bg-brand)' }}
+          class="h-12 w-12 overflow-hidden"
+          style={{ borderRadius: LOGO_CORNER_RADIUS }}
           aria-hidden="true"
         >
-          FE
+          <DistillerLogo />
         </div>
         <div class="flex flex-col items-center gap-[2px]">
           <span class="text-[13px] font-semibold text-[var(--figma-color-text)]">
@@ -172,21 +177,6 @@ export function AboutView({ onBack }: Props) {
 
       <Divider />
 
-      {/* ── author attribution ────────────────────────────────────────────── */}
-      <div class="flex items-center gap-3 px-4 py-3">
-        <div
-          class="flex h-8 w-8 flex-shrink-0 select-none items-center justify-center rounded-full text-[11px] font-semibold text-white"
-          style={{ background: 'var(--figma-color-bg-brand)' }}
-          aria-hidden="true"
-        >
-          PS
-        </div>
-        <div class="flex flex-col gap-[1px]">
-          <span class="text-[11px] font-medium text-[var(--figma-color-text)]">{AUTHOR_NAME}</span>
-          <span class="text-[10px] text-[var(--figma-color-text-secondary)]">{AUTHOR_ROLE}</span>
-        </div>
-      </div>
-
       {/* ── action buttons: Report a bug + Leave feedback ─────────────────── */}
       <div class="flex gap-2 px-4 pb-4">
         <div class="flex-1">
@@ -207,15 +197,17 @@ export function AboutView({ onBack }: Props) {
         </div>
       </div>
 
-      {/* ── footer: quiet "View source on GitHub" link ────────────────────── */}
-      <div class="flex justify-center pb-4">
+      {/* ── footer: "Created by … · View source ↗" ──────────────────────── */}
+      <div class="flex items-center justify-center gap-[4px] pb-4 text-[10px] text-[var(--figma-color-text-secondary)]">
+        <span>Created by {AUTHOR_NAME}</span>
+        <span aria-hidden="true">·</span>
         <button
           type="button"
           onClick={() => openUrl(VIEW_SOURCE_URL)}
-          class="flex cursor-default items-center gap-[5px] rounded text-[10px] text-[var(--figma-color-text-secondary)] hover:text-[var(--figma-color-text)] hover:underline"
-          style={{ background: 'none', border: 'none', outline: 'none', padding: '2px 6px' }}
+          class="flex cursor-default items-center gap-[4px] rounded hover:text-[var(--figma-color-text)] hover:underline"
+          style={{ background: 'none', border: 'none', outline: 'none', padding: '1px 3px' }}
         >
-          View source on GitHub
+          View source
           <IconExternalLink />
         </button>
       </div>

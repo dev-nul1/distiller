@@ -15,6 +15,7 @@ declare const styles: {
   readonly "border-collapse": string;
   readonly "border-t": string;
   readonly "bottom-[60px]": string;
+  readonly "container": string;
   readonly "contents": string;
   readonly "cursor-default": string;
   readonly "cursor-pointer": string;
@@ -46,6 +47,7 @@ declare const styles: {
   readonly "gap-[1px]": string;
   readonly "gap-[2px]": string;
   readonly "gap-[3px]": string;
+  readonly "gap-[4px]": string;
   readonly "gap-[5px]": string;
   readonly "grid": string;
   readonly "grow": string;
