@@ -19,7 +19,6 @@ import {
   richMixedItem,
   makeIR,
   makeItem,
-  makeSection,
   resetIds,
 } from './fixtures'
 

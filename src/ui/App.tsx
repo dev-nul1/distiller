@@ -18,7 +18,7 @@ import type {
 } from '../events'
 import { renderPlaintext } from './renderers/plaintext'
 import { renderMarkdown } from './renderers/markdown'
-import { renderLlm } from './renderers/llm'
+import { renderMarkdownAi } from './renderers/markdown-ai'
 import { renderCsv } from './renderers/csv'
 import { useExtraction } from './hooks/useExtraction'
 import { useClipboard } from './hooks/useClipboard'
@@ -40,7 +40,7 @@ function renderOutput(
   if (!ir) return ''
   switch (format) {
     case 'plaintext': return renderPlaintext(ir, opts)
-    case 'markdown':  return opts.aiOptimized ? renderLlm(ir, opts) : renderMarkdown(ir, opts)
+    case 'markdown':  return opts.aiOptimized ? renderMarkdownAi(ir, opts) : renderMarkdown(ir, opts)
     case 'csv':       return renderCsv(ir, opts)
   }
 }
@@ -94,7 +94,6 @@ const EMPTY_MESSAGES: Record<SelectionMode, string> = {
   page:      'This page is empty. There is nothing to export yet.',
   viewport:  'Nothing in view. Pan or zoom to the content you want to export.',
   selection: 'Nothing selected. Select stickies, text, or sections on the board.',
-  section:   'No sections selected. Select one or more sections, then they\'ll appear here.',
 }
 
 // ─── stat helpers (used by the result-zone status header) ──────────────────
@@ -231,10 +230,10 @@ export function App() {
   // ── selection-change listener ─────────────────────────────────────────────
   // Bump selectionRevision whenever the canvas selection changes. This is a
   // dep of the auto-extract effect, so changing the selection in Figma
-  // retriggers the debounce (for 'selection' and 'section' modes).
+  // retriggers the debounce (relevant for 'selection' mode).
   useEffect(() => {
     return on<SelectionChangedHandler>('SELECTION_CHANGED', () => {
-      if (mode === 'selection' || mode === 'section') {
+      if (mode === 'selection') {
         setSelectionRevision((r) => r + 1)
       }
     })

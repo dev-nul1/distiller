@@ -2,24 +2,8 @@ import { h } from 'preact'
 import { LoadingIndicator } from '@create-figma-plugin/ui'
 import type { Format } from '../../types'
 
-// ─── truncation (kept for potential future "compact preview" setting) ────────
-// To re-enable: set PREVIEW_LINE_LIMIT to desired line count, call truncate()
-// in the component below, swap textarea value to `preview`, and render the
-// overflow message when `overflow > 0`.
-//
-// const PREVIEW_LINE_LIMIT = 15
-//
-// function truncate(text: string): { preview: string; overflow: number } {
-//   const lines = text.split('\n')
-//   if (lines.length <= PREVIEW_LINE_LIMIT) return { preview: text, overflow: 0 }
-//   return {
-//     preview: lines.slice(0, PREVIEW_LINE_LIMIT).join('\n'),
-//     overflow: lines.length - PREVIEW_LINE_LIMIT,
-//   }
-// }
-
 /**
- * Render content as per-line elements. For markdown/llm formats, lines that
+ * Render content as per-line elements. For the markdown format, lines that
  * begin with one or more '#' characters receive heavier font weight so headings
  * read as headings without full markdown rendering.
  */

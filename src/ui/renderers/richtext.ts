@@ -104,14 +104,6 @@ export function renderRichRuns(runs: RichRun[], mode: RichRenderMode): string {
 }
 
 /**
- * Returns true when any run in the array belongs to a list paragraph.
- * Used by renderers to decide whether to add an outer '- ' bullet prefix.
- */
-export function hasListRuns(runs: RichRun[]): boolean {
-  return runs.some((r) => r.listType != null)
-}
-
-/**
  * Render a fenced Markdown code block.
  * Plain text mode outputs the code as-is (no fencing syntax).
  */

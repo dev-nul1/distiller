@@ -1,5 +1,4 @@
 import { render } from '@create-figma-plugin/ui'
-import { h } from 'preact'
 import { App } from './ui/App'
 import '!./output.css'
 import '!@create-figma-plugin/ui/lib/css/theme.css'

@@ -3,7 +3,6 @@ import type {
   ClosePluginHandler,
   ExtractCompleteHandler,
   ExtractErrorHandler,
-  ExtractProgressHandler,
   ExtractRequestHandler,
   LoadSettingsRequestHandler,
   NodeCountRequestHandler,
@@ -104,10 +103,8 @@ export default function (): void {
       const roots = resolveRoots(mode)
       let count = roots.length
       for (const root of roots) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ('findAll' in root && typeof (root as any).findAll === 'function') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          count += (root as any).findAll().length
+        if ('findAll' in root) {
+          count += (root as { findAll(): SceneNode[] }).findAll().length
         }
       }
       emit<NodeCountResponseHandler>('NODE_COUNT_RESPONSE', count)
@@ -116,9 +113,8 @@ export default function (): void {
     }
   })
 
-  on<ExtractRequestHandler>('EXTRACT_REQUEST', (mode, _options, requestId) => {
+  on<ExtractRequestHandler>('EXTRACT_REQUEST', (mode, requestId) => {
     try {
-      emit<ExtractProgressHandler>('EXTRACT_PROGRESS', { processed: 0, total: 0, requestId })
       const roots = resolveRoots(mode)
       const ir = buildIR(roots, mode)
       emit<ExtractCompleteHandler>('EXTRACT_COMPLETE', ir, requestId)

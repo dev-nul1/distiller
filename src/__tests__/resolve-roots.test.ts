@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { resolveRoots } from '../sandbox/resolve-roots'
 
 // ---------------------------------------------------------------------------
@@ -73,27 +73,6 @@ describe('resolveRoots – selection mode', () => {
   it('returns empty array when selection is empty', () => {
     setFigmaMock({ selection: [] })
     expect(resolveRoots('selection')).toEqual([])
-  })
-})
-
-describe('resolveRoots – section mode', () => {
-  it('returns only SECTION nodes from selection', () => {
-    const section = mockNode('SECTION')
-    const sticky = mockNode('STICKY')
-    setFigmaMock({ selection: [section, sticky] })
-    const result = resolveRoots('section')
-    expect(result).toHaveLength(1)
-    expect(result[0]).toBe(section)
-  })
-
-  it('throws when no sections are selected', () => {
-    setFigmaMock({ selection: [mockNode('STICKY')] })
-    expect(() => resolveRoots('section')).toThrow(/no sections selected/i)
-  })
-
-  it('throws when selection is empty', () => {
-    setFigmaMock({ selection: [] })
-    expect(() => resolveRoots('section')).toThrow(/no sections selected/i)
   })
 })
 
