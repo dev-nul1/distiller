@@ -5,8 +5,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for the idea! This is a hobby/portfolio project, so not every
-        request will be built — but well-described use cases are always welcome.
+        Thanks for the idea! This is an independent project, so not every
+        request will be built, but well-described use cases are always welcome.
 
   - type: textarea
     id: problem
@@ -37,6 +37,6 @@ body:
     id: context
     attributes:
       label: Additional context
-      description: Anything else that would help — examples, screenshots, links.
+      description: Anything else that would help, such as examples, screenshots, or links.
     validations:
       required: false

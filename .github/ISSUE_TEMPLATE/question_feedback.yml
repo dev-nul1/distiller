@@ -15,6 +15,6 @@ body:
     id: message
     attributes:
       label: Your question or feedback
-      description: Whatever's on your mind — questions, suggestions, or general thoughts.
+      description: Whatever's on your mind, such as questions, suggestions, or general thoughts.
     validations:
       required: true

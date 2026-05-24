@@ -133,7 +133,7 @@ More detail lives in [docs/TECHNICAL.md](docs/TECHNICAL.md) and [docs/PRD.md](do
 
 ## Contributing, feedback, and support
 
-This is a hobby and portfolio project, so support is best-effort, but feedback is genuinely welcome.
+This is an independent project built to fill a gap in FigJam's export tooling, so support is best-effort, but feedback is genuinely welcome.
 
 - **Bug reports** and **feature requests:** open a [GitHub issue](https://github.com/dev-nul1/distiller/issues) using the templates ([bug report](https://github.com/dev-nul1/distiller/issues/new?template=bug_report.yml), [feature request](https://github.com/dev-nul1/distiller/issues/new?template=feature_request.yml)).
 - **Questions or general feedback on GitHub:** use the [question / feedback template](https://github.com/dev-nul1/distiller/issues/new?template=question_feedback.yml).
