@@ -23,7 +23,7 @@ name and the property exposing text.
 - Node type identifier (likely `'STICKY'` but confirm)
 - Text property name (likely `text.characters` or `characters`)
 - Whether rich text (bold/italic) is exposed and whether v1 should flatten
-- Author metadata (if exposed, may be useful for ROADMAP)
+- Author metadata (authorName, authorVisible) – needed for the "Include author names" option
 
 **Outcome / notes:** ✅ VERIFIED
 
@@ -34,7 +34,8 @@ name and the property exposing text.
 - `.characters` returns a flat string. Rich text formatting (bold/italic) exists
   in the sublayer but v1 should use `.characters` only (correct approach).
 - Author: `authorName: string` and `authorVisible: boolean` are on `StickyNode`.
-  Exposing author is a ROADMAP item as assumed.
+  Author attribution shipped in v1 as an opt-in option ("Include author names").
+  `author` is populated on `ExportItem` only when `node.authorVisible === true`.
 - `isWideWidth: boolean` – sticky-shape variant. Not needed for v1.
 - `stuckNodes: SceneNode[]` – lists stamps, highlights, and widgets stuck to this
   sticky. This is the entry point for vote counting (see item 2).
