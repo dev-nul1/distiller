@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`renderLlm – snapshot (medium fixture) > matches snapshot 1`] = `
+exports[`renderMarkdownAi – snapshot (medium fixture) > matches snapshot 1`] = `
 "# Distiller FigJam Export: Retro Board
 
 Board: Sprint Retro.fig

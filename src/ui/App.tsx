@@ -18,7 +18,7 @@ import type {
 } from '../events'
 import { renderPlaintext } from './renderers/plaintext'
 import { renderMarkdown } from './renderers/markdown'
-import { renderLlm } from './renderers/llm'
+import { renderMarkdownAi } from './renderers/markdown-ai'
 import { renderCsv } from './renderers/csv'
 import { useExtraction } from './hooks/useExtraction'
 import { useClipboard } from './hooks/useClipboard'
@@ -40,7 +40,7 @@ function renderOutput(
   if (!ir) return ''
   switch (format) {
     case 'plaintext': return renderPlaintext(ir, opts)
-    case 'markdown':  return opts.aiOptimized ? renderLlm(ir, opts) : renderMarkdown(ir, opts)
+    case 'markdown':  return opts.aiOptimized ? renderMarkdownAi(ir, opts) : renderMarkdown(ir, opts)
     case 'csv':       return renderCsv(ir, opts)
   }
 }

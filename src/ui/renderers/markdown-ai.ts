@@ -12,14 +12,13 @@ function countVotesInIR(ir: ExportIR): number {
   return sumVotes(ir.orphans) + walk(ir.sections)
 }
 
-export function renderLlm(ir: ExportIR, opts: RenderOpts): string {
+export function renderMarkdownAi(ir: ExportIR, opts: RenderOpts): string {
   const { fileName, pageName, extractedAt, mode, counts } = ir.meta
 
   const scopeLabel: Record<string, string> = {
     page: 'Whole page',
     selection: 'Current selection',
     viewport: 'Current viewport',
-    section: 'Selected sections',
   }
 
   const countParts: string[] = []
