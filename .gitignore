@@ -1,6 +1,12 @@
 .DS_Store
+Thumbs.db
 *.log
 *.css.d.ts
 /build/
 /manifest.json
 node_modules/
+
+# Environment / secrets (none used; guarded against accidental creation)
+.env
+.env.*
+.env.local
