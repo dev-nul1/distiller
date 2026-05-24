@@ -36,7 +36,7 @@ export function renderLlm(ir: ExportIR, opts: RenderOpts): string {
   }
 
   const preamble = [
-    `# FigJam Export: ${pageName}`,
+    `# Distiller FigJam Export: ${pageName}`,
     '',
     `Board: ${fileName}`,
     `Exported: ${extractedAt}`,

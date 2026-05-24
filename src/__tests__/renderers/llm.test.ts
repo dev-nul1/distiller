@@ -17,9 +17,9 @@ import {
 beforeEach(() => resetIds())
 
 describe('renderLlm – preamble', () => {
-  it('starts with # FigJam Export: {pageName}', () => {
+  it('starts with # Distiller FigJam Export: {pageName}', () => {
     const out = renderLlm(emptyIR, {})
-    expect(out).toMatch(/^# FigJam Export: Page 1\n/)
+    expect(out).toMatch(/^# Distiller FigJam Export: Page 1\n/)
   })
 
   it('includes Board, Exported, Scope, Content, Export settings fields', () => {
@@ -33,7 +33,7 @@ describe('renderLlm – preamble', () => {
   it('includes Board: fileName and page name in the title', () => {
     const out = renderLlm(emptyIR, {})
     expect(out).toContain('Board: Workshop.fig')
-    expect(out).toContain('# FigJam Export: Page 1')
+    expect(out).toContain('# Distiller FigJam Export: Page 1')
   })
 
   it('includes Exported: ISO timestamp from meta', () => {
