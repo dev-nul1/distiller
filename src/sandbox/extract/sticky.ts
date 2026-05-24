@@ -22,7 +22,7 @@ export function extractSticky(node: StickyNode): ExportItem | null {
     content: content || '(empty)',
     ...(richContent ? { richContent } : {}),
     ...(votes > 0 ? { votes } : {}),
-    ...(node.authorName ? { author: node.authorName.trim().replace(/\s+/g, ' ') } : {}),
+    ...(node.authorVisible && node.authorName ? { author: node.authorName.trim().replace(/\s+/g, ' ') } : {}),
     position: { x: bb?.x ?? 0, y: bb?.y ?? 0 },
   }
 }
