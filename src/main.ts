@@ -3,7 +3,6 @@ import type {
   ClosePluginHandler,
   ExtractCompleteHandler,
   ExtractErrorHandler,
-  ExtractProgressHandler,
   ExtractRequestHandler,
   LoadSettingsRequestHandler,
   NodeCountRequestHandler,
@@ -116,9 +115,8 @@ export default function (): void {
     }
   })
 
-  on<ExtractRequestHandler>('EXTRACT_REQUEST', (mode, _options, requestId) => {
+  on<ExtractRequestHandler>('EXTRACT_REQUEST', (mode, requestId) => {
     try {
-      emit<ExtractProgressHandler>('EXTRACT_PROGRESS', { processed: 0, total: 0, requestId })
       const roots = resolveRoots(mode)
       const ir = buildIR(roots, mode)
       emit<ExtractCompleteHandler>('EXTRACT_COMPLETE', ir, requestId)

@@ -3,18 +3,14 @@ import { emit, on } from '@create-figma-plugin/utilities'
 import type {
   ExtractCompleteHandler,
   ExtractErrorHandler,
-  ExtractProgressHandler,
   ExtractRequestHandler,
 } from '../../events'
 import type { ExportIR, SelectionMode } from '../../types'
-
-export type ExtractionProgress = { processed: number; total: number }
 
 export function useExtraction() {
   const [ir, setIr] = useState<ExportIR | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [progress, setProgress] = useState<ExtractionProgress | null>(null)
   /**
    * Monotonic counter. Each extract() call increments this and stamps the
    * request. The sandbox echoes the id back in every response, so we can
@@ -27,7 +23,6 @@ export function useExtraction() {
     setLoading(true)
     setIr(null)       // clear stale IR so buttons disable while extraction runs
     setError(null)
-    setProgress(null)
 
     // Accumulate cleanup functions so all listeners are removed as a unit
     const cleanup: Array<() => void> = []
@@ -39,7 +34,6 @@ export function useExtraction() {
         unregister()
         setIr(result)
         setLoading(false)
-        setProgress(null)
         onComplete?.(result)
       })
     )
@@ -50,20 +44,11 @@ export function useExtraction() {
         unregister()
         setError(message)
         setLoading(false)
-        setProgress(null)
       })
     )
 
-    cleanup.push(
-      on<ExtractProgressHandler>('EXTRACT_PROGRESS', (p) => {
-        if (p.requestId !== requestId) return  // stale
-        setProgress(p)
-      })
-    )
-
-    emit<ExtractRequestHandler>('EXTRACT_REQUEST', mode, {}, requestId)
+    emit<ExtractRequestHandler>('EXTRACT_REQUEST', mode, requestId)
   }, [])
 
-  return { ir, loading, error, progress, extract }
+  return { ir, loading, error, extract }
 }
-

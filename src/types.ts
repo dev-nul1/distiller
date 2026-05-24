@@ -2,10 +2,6 @@ export type SelectionMode = 'page' | 'section' | 'selection' | 'viewport'
 
 export type Format = 'plaintext' | 'markdown' | 'csv'
 
-export type ExtractOptions = {
-  // reserved for future per-extraction options
-}
-
 export type TableData = {
   /** [row][col]; merged cells are exposed as empty strings */
   rows: string[][]
@@ -120,13 +116,6 @@ export type RenderOpts = {
    * Persisted in clientStorage; defaults to true.
    */
   aiOptimized?: boolean
-  /**
-   * Internal: when true, vote counts and author names are emitted as plain
-   * text (e.g. "(3 votes)") rather than markdown italics ("*(3 votes)*").
-   * Set by the LLM renderer when calling renderMarkdown for its body.
-   * Not persisted or exposed in the UI.
-   */
-  plainMeta?: boolean
 }
 
 /** Persisted user preferences stored in figma.clientStorage. */

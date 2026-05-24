@@ -20,11 +20,9 @@ const AUTHOR_NAME = 'Philip Scheid'
 // container's overflow:hidden ensures the logo is clipped to this radius.
 const LOGO_CORNER_RADIUS = 4   // matches rounded-xl (0.75rem)
 
-// ── Plugin name strings ───────────────────────────────────────────────────────
-// Full name: en dash – (U+2013) between brand and descriptor. Keep exact.
-// Short form: used in space-constrained surfaces inside the running plugin UI.
-const PLUGIN_NAME_FULL  = 'Distiller – FigJam Exporter'
-const PLUGIN_NAME_SHORT = 'Distiller'
+// ── Plugin name string ────────────────────────────────────────────────────────
+// En dash – (U+2013) between brand and descriptor. Keep exact.
+const PLUGIN_NAME_FULL = 'Distiller – FigJam Exporter'
 
 // ── How-it-works steps ────────────────────────────────────────────────────────
 const STEPS = [

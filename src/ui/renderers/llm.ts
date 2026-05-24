@@ -52,6 +52,6 @@ export function renderLlm(ir: ExportIR, opts: RenderOpts): string {
     '',
   ].join('\n')
 
-  return preamble + renderMarkdown(ir, { ...opts, plainMeta: true })
+  return preamble + renderMarkdown(ir, opts)
 }
 

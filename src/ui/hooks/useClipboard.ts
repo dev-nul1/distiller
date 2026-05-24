@@ -21,23 +21,18 @@ async function copyToClipboard(text: string): Promise<void> {
 }
 
 export function useClipboard() {
-  const [copied, setCopied] = useState(false)
   const [clipError, setClipError] = useState<string | null>(null)
 
   const writeText = useCallback(async (text: string): Promise<boolean> => {
     try {
       await copyToClipboard(text)
-      setCopied(true)
       setClipError(null)
-      setTimeout(() => setCopied(false), 2500)
       return true
     } catch (err) {
       setClipError(err instanceof Error ? err.message : 'Copy failed')
-      setCopied(false)
       return false
     }
   }, [])
 
-  return { copied, clipError, writeText }
+  return { clipError, writeText }
 }
-
