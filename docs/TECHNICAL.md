@@ -318,7 +318,7 @@ figjam-exporter/
 ├── tsconfig.json
 ├── tailwind.config.js
 ├── vitest.config.ts
-├── .eslintrc.json
+├── .eslintrc.cjs
 ├── docs/
 │   ├── PRD.md
 │   ├── TECHNICAL.md
