@@ -1,49 +1,27 @@
-# FigJam Exporter – Technical Design
+# Distiller – FigJam Exporter · Technical Design
 
-**Companion to:** `PRD.md`
-**Date:** [05/21/26]
+**Companion to:** `PRD.md`  
+**Date:** 2026-05-21  
 **API verification:** completed 2026-05-21 – see `API-VERIFICATION.md`
+
+---
 
 ## Stack
 
 | Layer | Choice | Reason |
 |---|---|---|
-| Language | TypeScript | Figma typings catch real bugs |
-| Framework | `create-figma-plugin` (Preact) | Native-feeling UI, single-file bundling, well-maintained, Community-friendly |
-| Template | `preact-tailwindcss` | First-class Tailwind integration with Figma theme auto-sync |
-| UI components | `@create-figma-plugin/ui` + Tailwind | Native controls for inputs/buttons, Tailwind for layout |
-| Linting | `@figma/eslint-plugin-figma-plugins` | Project standard |
+| Language | TypeScript | Figma plugin typings catch real bugs |
+| Framework | `create-figma-plugin` (Preact) | Native-feeling UI, single-file bundling, Community-friendly |
+| Template | `preact-tailwindcss` | First-class Tailwind v4 integration with Figma theme support |
+| UI components | `@create-figma-plugin/ui` + Tailwind | Native controls for inputs/buttons; Tailwind for layout |
+| Linting | `@figma/eslint-plugin-figma-plugins` + `@typescript-eslint` | Figma-specific rules + typed TypeScript linting |
 | Typings | `@figma/plugin-typings` | Project standard |
 
-### Bootstrap command
+**Tailwind v4 note:** The `preact-tailwindcss` template ships Tailwind v4. Build uses the standalone `@tailwindcss/cli` rather than PostCSS. `src/input.css` uses `@import "tailwindcss"` as the entry point, with a `@config "../tailwind.config.js"` directive to activate the `.figma-dark` dark mode variant.
 
-```
-npx --yes create-figma-plugin --template plugin/preact-tailwindcss
-```
-
-### Why this stack (per project decision flow)
-
-1. Surface: FigJam → `editorType: ["figjam"]`
-2. Plugin (not widget)
-3. Needs UI, medium complexity (4-5 views, format/mode picker, optional preview)
-4. Public Community release → polish matters, native feel matters
-5. No unusual deps
-
-`create-figma-plugin` is the sweet spot. Tailwind via the official template
-gives us layout DX without sacrificing native components.
-
-**Tailwind version note (verified 2026-05-21):** The `preact-tailwindcss`
-template ships Tailwind **v4**, not v3. Key differences from v3:
-- Build uses the standalone `@tailwindcss/cli`, not PostCSS.
-- `src/input.css` uses `@import "tailwindcss";` as the entry point.
-- `tailwind.config.js` contains `darkMode: ['class', '.figma-dark']` for
-  Figma theme support, but in v4 the JS config is not auto-loaded. After
-  scaffolding, add `@config "../tailwind.config.js"` to `src/input.css` so the
-  `.figma-dark` dark mode variant is active.
+---
 
 ## Architecture
-
-### Two execution contexts
 
 ```
 ┌─────────────────────────────────────┐
@@ -51,15 +29,16 @@ template ships Tailwind **v4**, not v3. Key differences from v3:
 │   - Access to figma.* API           │
 │   - Single-threaded vs document     │
 │   - Traversal, extraction           │
+│   - Settings persistence            │
 │   - No DOM, no fetch                │
 └──────────┬──────────────────────────┘
            │
-           │  postMessage (typed events)
+           │  postMessage (typed events via @create-figma-plugin/utilities)
            │
 ┌──────────▼──────────────────────────┐
-│   UI iframe (ui.tsx)                │
+│   UI iframe (ui.tsx / App.tsx)      │
 │   - Preact + Tailwind + native UI   │
-│   - Renderers (md, csv, plain, llm) │
+│   - Format-specific renderers       │
 │   - Clipboard, download             │
 │   - User interaction                │
 └─────────────────────────────────────┘
@@ -67,275 +46,416 @@ template ships Tailwind **v4**, not v3. Key differences from v3:
 
 **Division of responsibility:**
 
-- **Sandbox** does FigJam traversal and produces a normalized intermediate
-  representation (IR). It does *not* know about output formats.
-- **UI** receives the IR and runs format-specific renderers. Keeping renderers
-  in the UI context means we can preview live without re-traversing the
-  document.
+- The **sandbox** accesses the FigJam document, resolves the node scope for the active mode, traverses the tree, and emits a format-neutral IR. It knows nothing about output formats.
+- The **UI** receives the IR and runs format-specific renderers. Keeping renderers in the UI context means format previews and option-change re-renders happen without re-traversing the document. Renderers are pure functions — easy to unit-test without Figma.
 
-This split also means renderers are pure functions over the IR – easy to
-unit-test outside Figma.
+Traversal is the expensive operation: it is locked to the single-threaded document and must re-walk the tree on any change of scope. Rendering is cheap and pure. Separating them means the document is read once into a format-neutral IR, and the UI can re-render any format or option combination freely without touching the document again. Adding a new output format is a pure function over the IR that never touches extraction.
 
-### Messaging
+### Single source of truth
 
-Use `@create-figma-plugin/utilities` `emit`/`on` for type-safe message
-passing. Define event names as a const map in `src/events.ts` to avoid
-stringly-typed bugs.
+Earlier iterations derived the preview text, stat pills, banner, and button state independently, and they drifted out of sync — showing a populated preview alongside an empty-state banner, for example. Collapsing them into one discriminated union that every result-derived element re-derives from in the same render makes that disagreement structurally impossible.
 
-Events (initial):
+All result-derived UI (preview text, stat pills, state banner, button enabled-state) is derived from a single `LiveResult` discriminated union:
 
-- `EXTRACT_REQUEST` (UI → sandbox) with selection mode + options
-- `EXTRACT_PROGRESS` (sandbox → UI) with `{ processed, total }` for large pages
-- `EXTRACT_COMPLETE` (sandbox → UI) with the IR payload
-- `EXTRACT_ERROR` (sandbox → UI) with a human-readable message
+```ts
+type LiveResult =
+  | { kind: 'idle' }
+  | { kind: 'loading' }
+  | { kind: 'has-content'; ir: ExportIR; rendered: string }
+  | { kind: 'empty';   message: string }
+  | { kind: 'error';   message: string }
+```
+
+`liveResult` is computed by `useMemo` from the raw extraction state. No partial updates — every result-derived element re-derives from `liveResult` in the same render, so they always agree.
+
+---
+
+## Message passing
+
+Messages are typed via `EventHandler` interfaces in `src/events.ts`. `emit<H>()` and `on<H>()` from `@create-figma-plugin/utilities` enforce the name and handler signature at the call site.
+
+| Event | Direction | Payload |
+|---|---|---|
+| `LOAD_SETTINGS_REQUEST` | UI → sandbox | — |
+| `SETTINGS_LOADED` | sandbox → UI | `(settings: PluginSettings, hasSelection: boolean)` |
+| `SAVE_SETTINGS` | UI → sandbox | `(settings: PluginSettings)` |
+| `EXTRACT_REQUEST` | UI → sandbox | `(mode: SelectionMode, requestId: number)` |
+| `EXTRACT_COMPLETE` | sandbox → UI | `(ir: ExportIR, requestId: number)` |
+| `EXTRACT_ERROR` | sandbox → UI | `(message: string, requestId: number)` |
+| `NODE_COUNT_REQUEST` | UI → sandbox | `(mode: SelectionMode)` |
+| `NODE_COUNT_RESPONSE` | sandbox → UI | `(count: number)` |
+| `SELECTION_CHANGED` | sandbox → UI | — |
+| `PAGE_CHANGED` | sandbox → UI | — |
+| `VIEWPORT_CHANGED` | sandbox → UI | — |
+| `RESIZE_WINDOW` | UI → sandbox | `({ width: number, height: number })` |
+| `OPEN_EXTERNAL` | UI → sandbox | `(url: string)` |
+| `CLOSE_PLUGIN` | UI → sandbox | — |
+
+`requestId` is a monotonic counter generated by the UI; the sandbox echoes it in every `EXTRACT_COMPLETE` and `EXTRACT_ERROR` response. Because live extraction fires on every selection, page, and viewport change, a slow response can arrive after a newer request has superseded it. The monotonic counter lets the UI discard any result that does not match the current request, so a stale extraction can never overwrite a newer one.
+
+`NODE_COUNT_REQUEST` / `NODE_COUNT_RESPONSE` is a lightweight pre-flight count used by the auto-extract guard: if the count exceeds 2 000 nodes, auto-extract is skipped and the UI shows a manual "Generate preview" button instead.
+
+`VIEWPORT_CHANGED` is emitted by a 500 ms polling loop in the sandbox (no native viewport-change event exists in the Plugin API). The UI only reacts when the active mode is `'viewport'`.
+
+---
 
 ## Data model (IR)
 
-The intermediate representation the sandbox produces and the UI consumes:
+The IR is the contract between extraction and output: it is deliberately format-neutral, so no renderer's syntax assumptions leak back into traversal, and extraction never needs to know what formats exist. The sandbox produces it; the UI consumes it.
 
 ```ts
+type SelectionMode = 'page' | 'selection' | 'viewport'
+
 type ExportIR = {
   meta: {
-    fileName: string
-    pageName: string
-    extractedAt: string  // ISO timestamp
+    fileName: string       // figma.root.name
+    pageName: string       // figma.currentPage.name
+    extractedAt: string    // ISO 8601 timestamp
     mode: SelectionMode
-    counts: { stickies: number; text: number; shapes: number; tables: number; sections: number }
+    counts: {
+      stickies: number
+      text: number
+      shapes: number
+      tables: number
+      codes: number
+      sections: number
+    }
   }
-  sections: SectionNode[]      // top-level sections
-  orphans: ExportItem[]        // items not inside any section
+  sections: ExportSection[]   // top-level sections
+  orphans:  ExportItem[]      // items not inside any section
 }
 
-type SectionNode = {
+/** Named ExportSection (not SectionNode) to avoid collision with @figma/plugin-typings. */
+type ExportSection = {
   id: string
   title: string
-  depth: number                // for nested sections
+  depth: number          // 0 for top-level; increments for each nesting level
   items: ExportItem[]
-  children: SectionNode[]      // nested sections
+  children: ExportSection[]
 }
 
 type ExportItem = {
   id: string
-  kind: 'sticky' | 'text' | 'shape' | 'table'
-  content: string              // plain text, rich formatting flattened
-  votes?: number               // count of '+1' STAMP nodes stuck to this item;
-                               // omitted if zero. NOTE: counts stamp-based votes
-                               // only – FigJam Voting Widget state is not
-                               // accessible to external plugins (verified 2026-05-21)
-  position: { x: number; y: number }  // for ordering, dropped before render
-  tableData?: TableData        // populated if kind === 'table'
+  kind: 'sticky' | 'text' | 'shape' | 'table' | 'code'
+  content: string        // plain-text representation; always populated
+  richContent?: RichRun[]  // present only when at least one run has formatting
+  votes?: number         // count of '+1' stamps stuck to this item; omitted when zero
+  author?: string        // sticky creator's display name; present only when
+                         // node.authorVisible === true (see author-visibility note)
+  position: { x: number; y: number }  // canvas position — used for ordering, dropped before render
+  tableData?: TableData  // populated when kind === 'table'
+  codeData?: CodeData    // populated when kind === 'code'
+}
+
+/** One styled run within a rich-text block. */
+type RichRun = {
+  text: string
+  bold?: boolean
+  italic?: boolean
+  strikethrough?: boolean
+  underline?: boolean    // captured in the IR; decoration is dropped in output, text is always preserved
+  href?: string          // URL when this run is a hyperlink
+  listType?: 'ORDERED' | 'UNORDERED'
 }
 
 type TableData = {
-  rows: string[][]             // [row][col]; merged cells are not exposed by
-                               // the API – treat them as empty strings
-  hasHeader: boolean           // best-effort heuristic
+  rows: string[][]       // [row][col]; merged cells exposed as empty strings
+  hasHeader: boolean     // true when rows.length > 0; the FigJam API exposes no header flag,
+                         // so renderers treat the first row as the header by convention
 }
 
-type SelectionMode = 'page' | 'section' | 'selection' | 'viewport'
+type CodeData = {
+  code: string
+  language?: string      // lowercased (e.g. 'typescript', 'python'); absent when PLAINTEXT
+}
 ```
 
-## Pipeline
+### Rich-text limitations
 
-1. **UI sends `EXTRACT_REQUEST`** with selection mode and options.
-2. **Sandbox resolves the root node set** based on mode:
-   - `page`: `figma.currentPage.children`
-   - `section`: filter selection for `SECTION` nodes, error if none
-   - `selection`: `figma.currentPage.selection`
-   - `viewport`: filter `currentPage.children` by intersection with
-     `figma.viewport.bounds`
-3. **Sandbox traverses** the root set, recursing into sections. For each
-   supported node type, produce an `ExportItem`. Traversal is **synchronous** –
-   `setTimeout` is not available in the sandbox context. For typical FigJam
-   boards this is fast enough without yielding (see Performance section).
-   Use manual recursion on `node.children`, skipping unsupported node types
-   (FRAME, GROUP, CONNECTOR, etc.) for early pruning.
-   Vote counts are derived by counting `STAMP` nodes in a sticky's
-   `stuckNodes` array where `node.name === '+1'`. FigJam Voting Widget vote
-   totals are inaccessible to external plugins.
-4. **Sandbox orders items** within each section using the spatial heuristic
-   (see Ordering below).
-5. **Sandbox emits `EXTRACT_COMPLETE`** with the IR.
-6. **UI renders preview** (if preview enabled) and shows the format picker.
-7. **On format selection, UI runs the appropriate renderer** against the IR.
-8. **On Copy/Download click**, UI writes to clipboard or triggers a download
-   blob.
+- **Bold** is detected via `fontWeight >= 700`. Medium/Semibold weights (500–600) are not tagged bold.
+- **Italic** is detected via `fontName.style` containing "italic" (case-insensitive).
+- **Underline** has no clean equivalent in the output formats, so the decoration is dropped while the underlined text is always preserved. This follows the no-data-loss principle applied throughout: when a format cannot represent something, the decoration is lost but never the content.
+- **Color, font size, and mixed-within-word styling** have no output representation.
+- **Nested lists** (ORDERED inside UNORDERED, etc.) are flattened to a single level.
+- **Partial-word links** are supported but may look odd in plain text.
+
+### Author visibility
+
+`author` is populated on `ExportItem` only when `node.authorVisible === true` on the `StickyNode`. This means a facilitator who hides their name in Figma will not have their name appear in the export, even when the "Include author names" option is enabled. Only stickies carry authorship data; `TEXT`, `SHAPE_WITH_TEXT`, `TABLE`, and `CODE_BLOCK` nodes do not expose authorship.
+
+### Settings persistence
+
+```ts
+type PluginSettings = {
+  includeVotes:    boolean   // default: true
+  includeSections: boolean   // default: true
+  csvExpandTables: boolean   // default: true
+  showPreview:     boolean   // default: false
+  includeAuthors:  boolean   // default: false
+  aiOptimized:     boolean   // default: true
+}
+```
+
+Stored in `figma.clientStorage` under the key `pluginSettings`. Schema versioning (current version: 2) handles forward-compatible migration — missing fields take their default values when reading older stored data.
+
+### Render options
+
+```ts
+type RenderOpts = {
+  includeVotes?:    boolean   // default true
+  includeSections?: boolean   // default true
+  csvExpandTables?: boolean   // default true
+  includeAuthors?:  boolean   // default false
+  aiOptimized?:     boolean   // Markdown only — adds AI context preamble
+}
+```
+
+---
+
+## Extraction pipeline
+
+1. **UI sends `EXTRACT_REQUEST`** with the active `SelectionMode` and a monotonic `requestId`.
+2. **Sandbox calls `resolveRoots(mode)`** to get the root node set:
+   - `'page'`: `[...figma.currentPage.children]`
+   - `'selection'`: `[...figma.currentPage.selection]`
+   - `'viewport'`: top-level children whose `absoluteBoundingBox` intersects `figma.viewport.bounds`
+3. **Sandbox calls `buildIR(roots, mode)`**, which traverses the root set:
+   - `SECTION` nodes are recursed into, building `ExportSection` trees (depth-first). Sections can be nested arbitrarily.
+   - Leaf nodes are dispatched to type-specific extractors (`extractSticky`, `extractText`, `extractShape`, `extractTable`, `extractCode`). Unsupported types (FRAME, GROUP, CONNECTOR, WIDGET, etc.) are skipped early.
+   - `spatialSort` is applied to each item list before returning.
+4. **Sandbox emits `EXTRACT_COMPLETE`** with the IR and the echoed `requestId`.
+5. **UI updates `liveResult`** from the new IR. If `requestId` does not match the current request, the response is discarded.
+6. **Format renderers run reactively** (via `useMemo`) whenever the IR, format, or options change — no re-extraction needed.
+
+**Traversal is synchronous.** `setTimeout` is not available in the Figma sandbox context. For typical FigJam boards (50–200 stickies, 4–8 sections) synchronous traversal completes in well under 1 second.
+
+### Auto-extract guard
+
+Before every auto-extract, the UI sends `NODE_COUNT_REQUEST` and waits for `NODE_COUNT_RESPONSE`. If the node count exceeds 2 000, auto-extract is skipped and the UI shows a "Generate preview" button. This prevents a debounced auto-extract from blocking the single-threaded Plugin API on large boards.
+
+---
 
 ## Ordering heuristic
 
-Within a section (or at the top level), items are sorted by spatial position:
+Within each section (and at the top level), items are sorted spatially:
 
-1. Group items into "rows" by y-coordinate, with a tolerance of roughly
-   half the median sticky height (tunable, start with 40px).
-2. Sort rows top-to-bottom by min y.
-3. Within a row, sort left-to-right by x.
+1. Sort all items by y ascending.
+2. Assign each item to an existing row if its y is within `ROW_TOLERANCE_PX` (40 px) of that row's first item's y; otherwise start a new row. This groups items that are visually on the same horizontal band.
+3. Sort rows by their minimum y (ascending).
+4. Within each row, sort by x (ascending).
 
-This won't match human intent perfectly. Document as a known limitation. v2
-candidate: optional drag-to-reorder in the preview pane.
+This heuristic does not always match the facilitator's intent in dense collages or free-form arrangements. See Known v1 limitations in `PRD.md`.
+
+---
 
 ## Renderers
 
-Each renderer is a pure function `(ir: ExportIR, opts: RenderOpts) => string`.
+Each renderer is a pure function `(ir: ExportIR, opts: RenderOpts) => string`. All live in `src/ui/renderers/`.
 
-### `plaintext.ts`
+### `plaintext.ts` · `renderPlaintext`
 
-- Section titles as their own lines, optionally with depth indentation.
-- Items as bullet-like dashes or just indented lines.
-- Votes as ` (N votes)` suffix when present and `opts.includeVotes`.
+- Section titles as indented lines (`depth × 2` spaces).
+- Items as `Label` then indented content on the next line(s).
+- Label format: `Label — Author · N votes` (separators appear only when the corresponding part is present).
+- Code items render as indented plain code (no fencing).
+- Tables render from `content` (pre-flattened to a string).
+- When `includeSections` is false, all items are rendered flat.
 
-### `markdown.ts`
+### `markdown.ts` · `renderMarkdown`
 
-- Section titles as `##`, `###`, etc. based on depth.
-- Items as `- ` bullets.
-- Votes as ` *(N votes)*` suffix.
-- Tables rendered as markdown tables.
+- Section titles as `##`, `###`, etc. based on depth (capped at `######`).
+- Items as block entries with a heading line: `### Label (Author) · N votes`.
+- Body renders rich text (bold `**`, italic `*`, strikethrough `~~`, links `[text](url)`, lists `- ` / `N. `).
+- Tables render as GitHub-flavored Markdown tables (pipe-delimited).
+- Code items render as fenced code blocks with language tag.
+- When `includeSections` is false, all items are rendered flat.
 
-### `llm.ts`
+### `markdown-ai.ts` · `renderMarkdownAi`
 
-- Wraps markdown with a preamble:
-  ```
-  # FigJam Workshop Export
+Prepends a structured context header to the output of `renderMarkdown`:
 
-  This is an export from a FigJam collaborative session. The structure below
-  reflects the workshop's organization:
-  - Headings are sections the facilitator created
-  - Bullet items are sticky notes, text, or labeled shapes
-  - Vote counts (when present) indicate participant prioritization
+```
+# Distiller FigJam Export: {pageName}
 
-  Source: {fileName} / {pageName}
-  Exported: {extractedAt}
+Board: {fileName}
+Exported: {extractedAt}
+Scope: {Whole page | Current selection | Current viewport}
+Content: {N sections, M sticky notes, …}
 
-  ---
-  ```
-- Otherwise same as markdown, possibly with slightly more verbose structural cues.
+Export settings:
+- Votes: included | excluded
+- Section hierarchy: included | flat list
+- Author attribution: included | excluded
 
-### `csv.ts`
+---
+{markdown body}
+```
 
-- One row per item.
-- Columns: `section_path`, `kind`, `content`, `votes`, `position_x`, `position_y`
-- Section path uses ` > ` as separator for nested sections.
-- Tables get one row per table cell with `kind=table_cell` and a `cell_ref`
-  column added, OR are skipped in CSV with a flag in `RenderOpts`. Decide
-  after prototyping.
+Called when format is `'markdown'` and `opts.aiOptimized` is true.
+
+### `csv.ts` · `renderCsv`
+
+- One row per item. Columns: `section_path`, `kind`, `content`, `votes`, `author` (when `includeAuthors`), `position_x`, `position_y`, `cell_ref`.
+- `section_path` uses ` > ` as the separator for nested sections.
+- Tables expand to one row per cell (`kind=table_cell`, `cell_ref=R{r}C{c}`) when `csvExpandTables` is true.
+- Code items: content column is `[code block omitted – N lines; use Markdown export]`.
+- Rich text is flattened to plain text (URLs appended inline when `href !== text`).
+
+### `richtext.ts` helpers
+
+`renderRichRuns(runs, mode)` – renders a rich-text run array to a string. Mode `'markup'` produces Markdown syntax; `'plain'` strips decoration and appends URLs inline.
+
+`renderCodeFence(codeData, mode)` – produces a fenced code block (```` ```lang\n...\n``` ````) in markup mode or plain code in plain mode.
+
+---
 
 ## Project structure
 
 ```
 figjam-exporter/
-├── README.md
 ├── manifest.json
 ├── package.json
 ├── tsconfig.json
 ├── tailwind.config.js
-├── .eslintrc.json
+├── vitest.config.ts
+├── .eslintrc.cjs
 ├── docs/
 │   ├── PRD.md
 │   ├── TECHNICAL.md
 │   ├── API-VERIFICATION.md
-│   └── ROADMAP.md
+│   ├── ROADMAP.md
+│   └── TESTING.md
 └── src/
-    ├── main.ts                 // sandbox entry
-    ├── ui.tsx                  // UI entry
-    ├── input.css               // tailwind entrypoint
-    ├── events.ts               // typed event names + payloads
-    ├── types.ts                // shared IR types
+    ├── main.ts                 # sandbox entry point
+    ├── ui.tsx                  # UI entry point (theme sync + render)
+    ├── input.css               # Tailwind entry point
+    ├── events.ts               # typed EventHandler interfaces
+    ├── types.ts                # shared IR types (ExportIR, RenderOpts, …)
     ├── sandbox/
-    │   ├── resolve-roots.ts    // mode → root nodes
-    │   ├── traverse.ts         // walk tree, build IR
-    │   ├── extract/
-    │   │   ├── sticky.ts
-    │   │   ├── text.ts
-    │   │   ├── shape.ts
-    │   │   ├── table.ts        // TableNode; merged cells → empty string
-    │   │   └── votes.ts        // count '+1' STAMPs in stuckNodes
-    │   └── ordering.ts
+    │   ├── resolve-roots.ts    # SelectionMode → root SceneNode[]
+    │   ├── traverse.ts         # walk tree → ExportIR
+    │   ├── ordering.ts         # spatialSort
+    │   └── extract/
+    │       ├── sticky.ts
+    │       ├── text.ts
+    │       ├── shape.ts
+    │       ├── table.ts
+    │       ├── code.ts
+    │       ├── votes.ts        # count '+1' STAMPs in stuckNodes
+    │       └── richtext.ts     # getStyledTextSegments → RichRun[]
     ├── ui/
     │   ├── App.tsx
+    │   ├── microcopy.ts        # toggle helpers + format descriptions
+    │   ├── assets/
+    │   │   └── distiller-logo.tsx
     │   ├── components/
     │   │   ├── ModePicker.tsx
     │   │   ├── FormatPicker.tsx
-    │   │   ├── OptionsPanel.tsx
+    │   │   ├── SettingsPopover.tsx
     │   │   ├── PreviewPanel.tsx
-    │   │   └── ActionButtons.tsx
+    │   │   ├── ActionButtons.tsx
+    │   │   ├── AboutView.tsx
+    │   │   └── Toast.tsx
     │   ├── hooks/
     │   │   ├── useExtraction.ts
     │   │   └── useClipboard.ts
     │   └── renderers/
     │       ├── plaintext.ts
     │       ├── markdown.ts
-    │       ├── llm.ts
-    │       └── csv.ts
+    │       ├── markdown-ai.ts
+    │       ├── csv.ts
+    │       └── richtext.ts
     └── __tests__/
-        └── renderers/          // renderer tests against fixture IRs
+        ├── ordering.test.ts
+        ├── resolve-roots.test.ts
+        ├── extract/
+        │   └── sticky.test.ts
+        └── renderers/
+            ├── fixtures.ts
+            ├── plaintext.test.ts
+            ├── markdown.test.ts
+            ├── markdown-ai.test.ts
+            └── csv.test.ts
 ```
 
-## Manifest (v1)
+---
+
+## Manifest
 
 ```json
 {
-  "name": "FigJam Exporter",
+  "name": "Distiller – FigJam Exporter",
   "id": "TBD-assigned-at-publish",
   "api": "1.0.0",
   "main": "build/main.js",
   "ui": "build/ui.js",
   "editorType": ["figjam"],
   "documentAccess": "dynamic-page",
-  "networkAccess": { "allowedDomains": ["none"] }
-}
-```
-
-**`documentAccess: "dynamic-page"` is required for all new plugins** (verified
-2026-05-21). Without it, Figma loads every page in the file on first run,
-showing a "Loading n pages..." notification. Since we act only on the current
-page, this field must be present.
-
-No network access. No external services. This should breeze through Figma
-review.
-
-## Performance
-
-- FigJam pages can have thousands of nodes. The Plugin API is single-threaded
-  against the document.
-- **`setTimeout` is NOT available in the main sandbox** (verified 2026-05-21).
-  Do not use `await new Promise(r => setTimeout(r, 0))` – it will throw.
-- For typical FigJam boards (~50–200 stickies, 4–8 sections), synchronous
-  manual recursion completes in well under 1 second. No yielding is needed for
-  v1 scope. Emit `EXTRACT_PROGRESS` before and after traversal to keep the UI
-  responsive, but do not attempt mid-traversal yields.
-- Use manual recursion on `node.children` (not `findAll`) so irrelevant branches
-  can be skipped early (e.g., ignore `FRAME`, `GROUP`, `CONNECTOR`, etc.).
-- Renderers run in the UI iframe, off the document thread, so they don't
-  affect document responsiveness.
-
-## Testing strategy
-
-- Renderers: unit tests against hand-built `ExportIR` fixtures. No Figma
-  needed. Snapshot tests are fine here.
-- Traversal: harder to unit-test without Figma. Approach: build minimal mock
-  node objects matching the Figma API shape and test traversal logic against
-  them. Skip integration tests in v1.
-- Manual test matrix: small board (10 stickies), medium board (50 stickies, 4
-  sections), large board (500+ stickies), pathological board (deeply nested
-  sections), empty board.
-
-## Build and dev
-
-Scripts from the `preact-tailwindcss` template, unchanged:
-
-```json
-{
-  "scripts": {
-    "build": "npm run build:css && npm run build:js",
-    "build:css": "tailwindcss --input ./src/input.css --output ./src/output.css",
-    "build:js": "build-figma-plugin --typecheck --minify",
-    "watch": "npm run build:css && concurrently npm:watch:css npm:watch:js",
-    "watch:css": "tailwindcss --input ./src/input.css --output ./src/output.css --watch",
-    "watch:js": "build-figma-plugin --typecheck --watch"
+  "networkAccess": {
+    "allowedDomains": ["none"]
   }
 }
 ```
 
-## Open technical questions
+`documentAccess: "dynamic-page"` is required for all new plugins. Without it, Figma loads every page in the file on plugin launch, showing a "Loading N pages…" notification. Since Distiller acts only on the current page, this field must be present.
 
-These are tracked in `API-VERIFICATION.md` for resolution at the start of the
-build phase.
+`networkAccess.allowedDomains: ["none"]` means no outbound network access. The plugin makes no external requests. This is the minimal network declaration and should ease Community review.
+
+---
+
+## Performance
+
+| Concern | Approach |
+|---|---|
+| Auto-extract debounce | 300 ms — prevents rapid re-extraction while the user adjusts options |
+| Large-board guard | If node count in scope exceeds 2 000, skip auto-extract; show manual trigger |
+| Synchronous traversal | `setTimeout` is not available in the Figma sandbox. Manual recursion on `node.children` prunes unsupported branches early. For typical boards this is imperceptibly fast. |
+| Viewport polling | 500 ms `setInterval` in the sandbox (no native viewport-change API event). Only the UI-side `'viewport'` mode listener reacts. |
+| Renderer runs in UI iframe | Off the document thread — format changes and option changes re-render without touching Figma's document model. |
+| Window resize | Driven by `useLayoutEffect` to avoid layout-before-paint artifacts. Compact mode measures `containerRef.scrollHeight` rather than using magic numbers. |
+
+---
+
+## Testing
+
+### Automated
+
+Vitest, run with `npm test`. Test files live in `src/__tests__/` and are excluded from `tsconfig.json` so they do not affect the production build type-checking.
+
+| File | What it covers |
+|---|---|
+| `ordering.test.ts` | Spatial sort algorithm: row grouping, tolerance, ties |
+| `resolve-roots.test.ts` | `resolveRoots` for page, selection, and viewport modes; viewport intersection geometry |
+| `extract/sticky.test.ts` | Author visibility gate, whitespace normalisation, empty-sticky handling |
+| `renderers/plaintext.test.ts` | All rendering paths: sections, orphans, votes, authors, code, tables, rich text |
+| `renderers/markdown.test.ts` | All rendering paths including rich text markup, heading depth, table GFM |
+| `renderers/markdown-ai.test.ts` | Preamble content, field values, snapshot of full output |
+| `renderers/csv.test.ts` | Column headers, section path, table expansion, code signpost, author column |
+
+Fixture IRs are defined in `src/__tests__/renderers/fixtures.ts` and shared across the renderer test files.
+
+### What is not unit-tested
+
+Sandbox traversal (`traverse.ts`) is tested via mock node objects for `resolve-roots` and extraction; a full integration test would require a live Figma document and is deferred. UI components and hooks are not unit-tested; the UI layer is validated manually.
+
+---
+
+## Build and dev
+
+```json
+{
+  "scripts": {
+    "build":     "npm run build:css && npm run build:js",
+    "build:css": "npx @tailwindcss/cli --input ./src/input.css --output ./src/output.css",
+    "build:js":  "build-figma-plugin --typecheck --minify",
+    "watch":     "npm run build:css && concurrently npm:watch:css npm:watch:js",
+    "watch:css": "npx @tailwindcss/cli --input ./src/input.css --output ./src/output.css --watch",
+    "watch:js":  "build-figma-plugin --typecheck --watch",
+    "test":      "vitest run"
+  }
+}
+```
+
+`build-figma-plugin` is from `@create-figma-plugin/build` (esbuild-based). `--typecheck` runs `tsc --noEmit` before bundling. `--minify` produces the production bundles in `build/`.
+
+Generated files (`src/output.css`, `*.d.css.ts` type stubs) are gitignored and must be rebuilt before loading the plugin in development.
