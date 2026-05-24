@@ -1,0 +1,20 @@
+name: Question or feedback
+description: Ask a question or share feedback about the plugin
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question or some feedback? This template is here for anyone who
+        prefers GitHub.
+
+        For general or casual feedback, you can also leave a comment on the
+        Figma Community page (TODO: add Community listing URL once published).
+
+  - type: textarea
+    id: message
+    attributes:
+      label: Your question or feedback
+      description: Whatever's on your mind — questions, suggestions, or general thoughts.
+    validations:
+      required: true

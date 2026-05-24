@@ -6,11 +6,11 @@ import type { OpenExternalHandler } from '../../events'
 import pkg from '../../../package.json'
 import { DistillerLogo } from '../assets/distiller-logo'
 
-// ── External URL constants — fill in before publish ───────────────────────────
-// TODO: replace placeholder Community URL after plugin is listed on Figma Community
-const REPORT_BUG_URL     = 'https://github.com/dev-nul1/figjam-exporter/issues/new'
-const LEAVE_FEEDBACK_URL = 'https://www.figma.com/community/plugin/TODO'
-const VIEW_SOURCE_URL    = 'https://github.com/dev-nul1/figjam-exporter'
+// ── External URL constants ────────────────────────────────────────────────────
+const REPORT_BUG_URL     = 'https://github.com/dev-nul1/distiller/issues/new?template=bug_report.yml'
+// TODO (post-publish): retarget to the Figma Community listing URL once the plugin is published.
+const LEAVE_FEEDBACK_URL = 'https://github.com/dev-nul1/distiller/issues/new?template=question_feedback.yml'
+const VIEW_SOURCE_URL    = 'https://github.com/dev-nul1/distiller'
 
 // ── Author ────────────────────────────────────────────────────────────────────
 const AUTHOR_NAME = 'Philip Scheid'

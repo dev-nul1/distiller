@@ -1,5 +1,6 @@
 {
   "version": "1.0.0",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "@create-figma-plugin/ui": "^4.0.3",
