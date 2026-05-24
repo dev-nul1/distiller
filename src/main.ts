@@ -103,10 +103,8 @@ export default function (): void {
       const roots = resolveRoots(mode)
       let count = roots.length
       for (const root of roots) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ('findAll' in root && typeof (root as any).findAll === 'function') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          count += (root as any).findAll().length
+        if ('findAll' in root) {
+          count += (root as { findAll(): SceneNode[] }).findAll().length
         }
       }
       emit<NodeCountResponseHandler>('NODE_COUNT_RESPONSE', count)
