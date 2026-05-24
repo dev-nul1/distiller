@@ -319,7 +319,7 @@ figjam-exporter/
 │   ├── TECHNICAL.md
 │   ├── API-VERIFICATION.md
 │   ├── ROADMAP.md
-│   └── TEST-RESULTS.md
+│   └── TESTING.md
 └── src/
     ├── main.ts                 # sandbox entry point
     ├── ui.tsx                  # UI entry point (theme sync + render)
