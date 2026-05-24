@@ -76,27 +76,6 @@ describe('resolveRoots – selection mode', () => {
   })
 })
 
-describe('resolveRoots – section mode', () => {
-  it('returns only SECTION nodes from selection', () => {
-    const section = mockNode('SECTION')
-    const sticky = mockNode('STICKY')
-    setFigmaMock({ selection: [section, sticky] })
-    const result = resolveRoots('section')
-    expect(result).toHaveLength(1)
-    expect(result[0]).toBe(section)
-  })
-
-  it('throws when no sections are selected', () => {
-    setFigmaMock({ selection: [mockNode('STICKY')] })
-    expect(() => resolveRoots('section')).toThrow(/no sections selected/i)
-  })
-
-  it('throws when selection is empty', () => {
-    setFigmaMock({ selection: [] })
-    expect(() => resolveRoots('section')).toThrow(/no sections selected/i)
-  })
-})
-
 describe('resolveRoots – viewport mode', () => {
   const vp = { x: 0, y: 0, width: 1000, height: 800 }
 

@@ -1,4 +1,4 @@
-export type SelectionMode = 'page' | 'section' | 'selection' | 'viewport'
+export type SelectionMode = 'page' | 'selection' | 'viewport'
 
 export type Format = 'plaintext' | 'markdown' | 'csv'
 

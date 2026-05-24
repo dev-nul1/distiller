@@ -2,25 +2,11 @@ import type { SelectionMode } from '../types'
 
 /**
  * Map a SelectionMode to the set of root SceneNodes to traverse.
- * Throws a user-facing Error when the mode requires a selection that
- * the user hasn't made (e.g. 'section' with nothing selected).
  */
 export function resolveRoots(mode: SelectionMode): SceneNode[] {
   switch (mode) {
     case 'page':
       return [...figma.currentPage.children]
-
-    case 'section': {
-      const sections = figma.currentPage.selection.filter(
-        (n): n is SectionNode => n.type === 'SECTION'
-      )
-      if (sections.length === 0) {
-        throw new Error(
-          'No sections selected. Select one or more sections and try again.'
-        )
-      }
-      return sections
-    }
 
     case 'selection':
       return [...figma.currentPage.selection]
@@ -40,4 +26,3 @@ export function resolveRoots(mode: SelectionMode): SceneNode[] {
     }
   }
 }
-
