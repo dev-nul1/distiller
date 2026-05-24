@@ -111,9 +111,9 @@ export type RenderOpts = {
    */
   includeAuthors?: boolean
   /**
-   * When true, Markdown output includes the AI context preamble (the former
-   * "LLM-ready" output). Only meaningful when used with the 'markdown' format.
-   * Persisted in clientStorage; defaults to true.
+   * When true, Markdown output includes an AI context preamble (board name,
+   * scope, item counts, export settings). Only meaningful with the 'markdown'
+   * format. Persisted in clientStorage; defaults to true.
    */
   aiOptimized?: boolean
 }

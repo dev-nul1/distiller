@@ -18,7 +18,7 @@ const AUTHOR_NAME = 'Philip Scheid'
 // ── Logo ─────────────────────────────────────────────────────────────────────
 // Corner radius of the logo container in px. Adjust here to restyle; the
 // container's overflow:hidden ensures the logo is clipped to this radius.
-const LOGO_CORNER_RADIUS = 4   // matches rounded-xl (0.75rem)
+const LOGO_CORNER_RADIUS = 4   // 4px = rounded (0.25rem) in Tailwind
 
 // ── Plugin name string ────────────────────────────────────────────────────────
 // En dash – (U+2013) between brand and descriptor. Keep exact.
@@ -134,7 +134,6 @@ export function AboutView({ onBack }: Props) {
         </div>
       </div>
 
-      {/* ── description (corrected copy — no "LLM-ready") ─────────────────── */}
       <p class="px-5 pb-4 text-center text-[11px] leading-[1.5] text-[var(--figma-color-text-secondary)]">
         Export stickies, text, and sections from any FigJam board to Markdown,
         plain text, or CSV.
