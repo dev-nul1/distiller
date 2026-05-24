@@ -2,6 +2,8 @@
 Thumbs.db
 *.log
 *.css.d.ts
+*.d.css.ts
+/src/output.css
 /build/
 /manifest.json
 node_modules/
