@@ -101,6 +101,7 @@ declare const styles: {
   readonly "pt-1": string;
   readonly "pt-2": string;
   readonly "pt-3": string;
+  readonly "pt-4": string;
   readonly "pt-6": string;
   readonly "pulse": string;
   readonly "px-1": string;

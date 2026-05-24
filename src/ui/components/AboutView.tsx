@@ -18,7 +18,7 @@ const AUTHOR_NAME = 'Philip Scheid'
 // ── Logo ─────────────────────────────────────────────────────────────────────
 // Corner radius of the logo container in px. Adjust here to restyle; the
 // container's overflow:hidden ensures the logo is clipped to this radius.
-const LOGO_CORNER_RADIUS = 12   // matches rounded-xl (0.75rem)
+const LOGO_CORNER_RADIUS = 4   // matches rounded-xl (0.75rem)
 
 // ── Plugin name strings ───────────────────────────────────────────────────────
 // Full name: en dash – (U+2013) between brand and descriptor. Keep exact.
@@ -145,7 +145,7 @@ export function AboutView({ onBack }: Props) {
       <Divider />
 
       {/* ── how it works ──────────────────────────────────────────────────── */}
-      <div class="flex flex-col gap-3 px-4 pt-3 pb-3">
+      <div class="flex flex-col gap-3 px-4 pt-3 pb-4">
         {/* Section header: legible uppercase label using secondary-but-readable color */}
         <p class="text-[10px] font-semibold uppercase tracking-wide text-[var(--figma-color-text-secondary)]">
           How it works
@@ -178,7 +178,7 @@ export function AboutView({ onBack }: Props) {
       <Divider />
 
       {/* ── action buttons: Report a bug + Leave feedback ─────────────────── */}
-      <div class="flex gap-2 px-4 pb-4">
+      <div class="flex gap-2 px-4 pb-4 pt-4">
         <div class="flex-1">
           <Button onClick={() => openUrl(LEAVE_FEEDBACK_URL)} fullWidth>
             <span class="flex items-center justify-center gap-1">
