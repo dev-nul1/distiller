@@ -4,12 +4,9 @@ Turn any FigJam board into clean, AI-ready text, votes, sections, formatting and
 
 Distiller is a FigJam plugin that reads the board you are looking at and gives you back tidy Markdown, plain text, or CSV, with a live preview and one-click copy or download. It is built for the moment after the workshop, when the sticky notes need to become a doc, a spreadsheet, or a prompt for an AI tool.
 
-<!-- TODO: hero screenshot / GIF of the export flow (default state with a live preview visible) -->
+![Distiller in action: opening the plugin, the live preview, the options popover, and copying the export](docs/images/Distiller%20FigJam%20Exporter.gif)
 
-> Ideal images to capture for this README:
-> - **Hero (near the top):** the plugin's default state with a populated live preview.
-> - **Export in action:** a short GIF showing scope/format changes updating the preview, then Copy.
-> - **About panel:** the in-plugin About view (how-it-works steps + links).
+![Distiller's About panel, showing the how-it-works steps and links](docs/images/Distiller%20about.png)
 
 ---
 
@@ -151,8 +148,9 @@ MIT. See [LICENSE](LICENSE).
 
 ## TODOs before / after publishing
 
-- [ ] **Hero image/GIF** near the top of this README (default state with live preview).
-- [ ] **Secondary screenshots** (export in action; About panel). The options popover shot is in place.
+- [x] **Hero GIF** near the top of this README (export flow: open, preview, options, copy).
+- [x] **Options popover screenshot** in the "What it does" section.
+- [x] **About panel screenshot** (how-it-works steps + links).
 - [ ] **Figma Community listing URL** in three places once published:
   - this README (Install section and Contributing section),
   - `LEAVE_FEEDBACK_URL` in `src/ui/components/AboutView.tsx` (currently points at the GitHub question/feedback template),
