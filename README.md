@@ -44,7 +44,7 @@ Pick **what** to export, pick a **format**, refine a few options, then copy or d
 
 Stickies, text, shapes with text, tables, and code blocks are all supported. The export runs entirely on your machine; the plugin makes no network requests.
 
-<!-- TODO: optional secondary screenshot here showing the options/toggles popover -->
+![Distiller's options popover, showing the votes, section hierarchy, and author-name toggles](docs/images/Distiller%20options.png)
 
 ---
 
@@ -152,7 +152,7 @@ MIT. See [LICENSE](LICENSE).
 ## TODOs before / after publishing
 
 - [ ] **Hero image/GIF** near the top of this README (default state with live preview).
-- [ ] **Secondary screenshots** (export in action; About panel; optionally the options popover).
+- [ ] **Secondary screenshots** (export in action; About panel). The options popover shot is in place.
 - [ ] **Figma Community listing URL** in three places once published:
   - this README (Install section and Contributing section),
   - `LEAVE_FEEDBACK_URL` in `src/ui/components/AboutView.tsx` (currently points at the GitHub question/feedback template),
