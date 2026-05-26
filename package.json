@@ -1,5 +1,6 @@
 {
   "version": "1.0.0",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "@create-figma-plugin/ui": "^4.0.3",
@@ -41,7 +42,7 @@
         "none"
       ]
     },
-    "id": "TBD-assigned-at-publish",
+    "id": "1640887971843572997",
     "name": "Distiller – FigJam Exporter",
     "main": "src/main.ts",
     "ui": "src/ui.tsx"

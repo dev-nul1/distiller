@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+contact_links:
+  # TODO: replace with the Figma Community listing URL once the plugin is published.
+  - name: General feedback & comments
+    url: https://www.figma.com/community/plugin/TODO
+    about: For casual feedback and comments, leave a note on the Figma Community page.

@@ -1,0 +1,102 @@
+name: Bug report
+description: Something isn't working the way you expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! This is an independent
+        project with best-effort support, so a clear description helps a lot.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What went wrong?
+      description: A short, clear description of the bug.
+      placeholder: e.g. The CSV export was empty even though stickies were selected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can someone else trigger the same problem?
+      placeholder: |
+        1. Open the plugin on a FigJam board
+        2. Select a few stickies
+        3. Choose CSV and click Copy
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: Expected vs. actual behavior
+      description: What did you expect to happen, and what actually happened?
+      placeholder: |
+        Expected: the selected stickies copied as CSV rows.
+        Actual: an empty result.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Export scope
+      description: Which scope was selected when the bug occurred?
+      options:
+        - Whole page
+        - Current selection
+        - Current viewport
+        - Not sure
+    validations:
+      required: false
+
+  - type: dropdown
+    id: format
+    attributes:
+      label: Export format
+      description: Which format was selected when the bug occurred?
+      options:
+        - Markdown
+        - Plain text
+        - CSV
+        - Not sure
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: ai-optimized
+    attributes:
+      label: AI-optimized mode
+      description: AI-optimized is a Markdown-only option, on by default.
+      options:
+        - label: AI-optimized was turned on (Markdown only)
+          required: false
+
+  - type: textarea
+    id: board
+    attributes:
+      label: FigJam board characteristics
+      description: Anything notable about the board, if relevant (very large, deeply nested sections, lots of connectors, specific node types, etc.).
+    validations:
+      required: false
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Figma desktop vs. browser, and your OS.
+      placeholder: e.g. Figma desktop, macOS 14
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Drag-and-drop any screenshots that help illustrate the problem.
+    validations:
+      required: false
