@@ -9,7 +9,7 @@ body:
         prefers GitHub.
 
         For general or casual feedback, you can also leave a comment on the
-        Figma Community page (TODO: add Community listing URL once published).
+        [Figma Community page](https://www.figma.com/community/plugin/1640887971843572997).
 
   - type: textarea
     id: message

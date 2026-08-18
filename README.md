@@ -47,9 +47,7 @@ Stickies, text, shapes with text, tables, and code blocks are all supported. The
 
 ## Install and use (end users)
 
-**Install:** from the Figma Community.
-
-<!-- TODO: add the Figma Community listing URL once the plugin is published -->
+**Install:** from the [Figma Community](https://www.figma.com/community/plugin/1640887971843572997).
 
 **Use** (this mirrors the in-plugin "How it works"):
 
@@ -134,25 +132,10 @@ This is an independent project built to fill a gap in FigJam's export tooling, s
 
 - **Bug reports** and **feature requests:** open a [GitHub issue](https://github.com/dev-nul1/distiller/issues) using the templates ([bug report](https://github.com/dev-nul1/distiller/issues/new?template=bug_report.yml), [feature request](https://github.com/dev-nul1/distiller/issues/new?template=feature_request.yml)).
 - **Questions or general feedback on GitHub:** use the [question / feedback template](https://github.com/dev-nul1/distiller/issues/new?template=question_feedback.yml).
-- **Casual feedback off GitHub:** leave a comment on the Figma Community page.
-
-<!-- TODO: add the Figma Community listing URL once the plugin is published (also referenced in the question/feedback issue template and .github/ISSUE_TEMPLATE/config.yml) -->
+- **Casual feedback off GitHub:** leave a comment on the [Figma Community page](https://www.figma.com/community/plugin/1640887971843572997).
 
 ---
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
-
----
-
-## TODOs before / after publishing
-
-- [x] **Hero GIF** near the top of this README (export flow: open, preview, options, copy).
-- [x] **Options popover screenshot** in the "What it does" section.
-- [x] **About panel screenshot** (how-it-works steps + links).
-- [ ] **Figma Community listing URL** in three places once published:
-  - this README (Install section and Contributing section),
-  - `LEAVE_FEEDBACK_URL` in `src/ui/components/AboutView.tsx` (currently points at the GitHub question/feedback template),
-  - the Figma Community contact link in `.github/ISSUE_TEMPLATE/config.yml` and the note in `.github/ISSUE_TEMPLATE/question_feedback.yml`.
-- [ ] **Plugin `id`** in `package.json` (`figma-plugin.id`) is `TBD-assigned-at-publish`; Figma assigns the real id at publish.

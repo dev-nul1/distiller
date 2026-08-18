@@ -8,8 +8,7 @@ import { DistillerLogo } from '../assets/distiller-logo'
 
 // ── External URL constants ────────────────────────────────────────────────────
 const REPORT_BUG_URL     = 'https://github.com/dev-nul1/distiller/issues/new?template=bug_report.yml'
-// TODO (post-publish): retarget to the Figma Community listing URL once the plugin is published.
-const LEAVE_FEEDBACK_URL = 'https://github.com/dev-nul1/distiller/issues/new?template=question_feedback.yml'
+const LEAVE_FEEDBACK_URL = 'https://www.figma.com/community/plugin/1640887971843572997'
 const VIEW_SOURCE_URL    = 'https://github.com/dev-nul1/distiller'
 
 // ── Author ────────────────────────────────────────────────────────────────────

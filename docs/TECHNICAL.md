@@ -385,7 +385,7 @@ figjam-exporter/
 ```json
 {
   "name": "Distiller – FigJam Exporter",
-  "id": "TBD-assigned-at-publish",
+  "id": "1640887971843572997",
   "api": "1.0.0",
   "main": "build/main.js",
   "ui": "build/ui.js",
