@@ -57,22 +57,6 @@ export interface SelectionChangedHandler extends EventHandler {
   handler: () => void
 }
 
-/** UI → sandbox: lightweight pre-flight count of nodes for a given mode */
-export interface NodeCountRequestHandler extends EventHandler {
-  name: 'NODE_COUNT_REQUEST'
-  handler: (mode: SelectionMode) => void
-}
-
-/**
- * sandbox → UI: result of a NODE_COUNT_REQUEST.
- * count is the total number of scene nodes in scope; -1 means resolveRoots threw
- * (e.g. no sections selected when mode === 'section').
- */
-export interface NodeCountResponseHandler extends EventHandler {
-  name: 'NODE_COUNT_RESPONSE'
-  handler: (count: number) => void
-}
-
 /**
  * UI → sandbox: programmatically resize the plugin window.
  * Triggered by the UI when it needs to grow (preview shown) or shrink (preview

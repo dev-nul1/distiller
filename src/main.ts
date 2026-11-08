@@ -5,8 +5,6 @@ import type {
   ExtractErrorHandler,
   ExtractRequestHandler,
   LoadSettingsRequestHandler,
-  NodeCountRequestHandler,
-  NodeCountResponseHandler,
   OpenExternalHandler,
   PageChangedHandler,
   ResizeWindowHandler,
@@ -96,21 +94,6 @@ export default function (): void {
 
   on<OpenExternalHandler>('OPEN_EXTERNAL', (url) => {
     figma.openExternal(url)
-  })
-
-  on<NodeCountRequestHandler>('NODE_COUNT_REQUEST', (mode) => {
-    try {
-      const roots = resolveRoots(mode)
-      let count = roots.length
-      for (const root of roots) {
-        if ('findAll' in root) {
-          count += (root as { findAll(): SceneNode[] }).findAll().length
-        }
-      }
-      emit<NodeCountResponseHandler>('NODE_COUNT_RESPONSE', count)
-    } catch {
-      emit<NodeCountResponseHandler>('NODE_COUNT_RESPONSE', -1)
-    }
   })
 
   on<ExtractRequestHandler>('EXTRACT_REQUEST', (mode, requestId) => {

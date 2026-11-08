@@ -40,7 +40,7 @@ Fixture IRs are shared across the renderer test files via `src/__tests__/rendere
 - **Vote counting:** `+1` stamps, Voting Widget limitation (widget votes show as 0).
 - **Author attribution:** `authorVisible` toggled on/off in real Figma.
 - **Settings persistence:** close and reopen the plugin; verify all toggles restore correctly.
-- **Window resize behaviour:** expanded mode (640 px) vs. compact (measured height); large-board guard.
+- **Window resize behaviour:** expanded mode (640 px) vs. compact (measured height); slow-scope guard fallback.
 - **Keyboard shortcuts:** Enter = Copy, Escape = close.
 - **Clipboard and download:** both primary and secondary actions across formats.
 
@@ -60,7 +60,10 @@ Run against a real FigJam file before any release. Mark Pass / Fail / N/A in the
 | Selection (select 2 stickies) / Markdown | Only selected stickies | |
 | Copy action | Clipboard receives correct text | |
 | Download action | File saves with correct name and extension | |
-| Enter shortcut | Copies output | |
+| Enter shortcut, preview on, right after opening | Copies the current preview and shows the toast | |
+| Enter shortcut after switching mode | Copies the new mode's content, not the previous mode's | |
+| Enter shortcut after changing format or an option (preview on) | Copies in the new format / with the new option | |
+| Enter shortcut after changing format (preview off) | Copies in the new format | |
 | Escape shortcut | Plugin closes | |
 | Toggle Include votes off | Vote counts absent from output | |
 | Toggle Include authors on | Author names present (when authorVisible = true) | |
@@ -79,14 +82,19 @@ Run against a real FigJam file before any release. Mark Pass / Fail / N/A in the
 | Show preview on | Preview updates with options | |
 | Show preview off | Header pills still correct | |
 
-#### Board C – large (500+ nodes)
+#### Board C – large (500+ nodes; comfortably exercised up to ~2300 stickies)
 
 | Scenario | Expected | Status |
 |---|---|---|
-| Page mode | Large-board guard fires; "Generate preview" shown | |
-| Manual "Generate preview" click | Extraction runs, content appears | |
-| Viewport mode (pan to small area) | Auto-extract resumes when count drops below threshold | |
-| Extraction time (page / Markdown) | Completes in < 1 s; no UI freeze | |
+| Page mode, sub-budget board (extract under 1500 ms) | Auto-preview runs; no manual prompt | |
+| Page mode, over-budget board | Slow auto-extract result stays visible; scope flagged so the next change shows "Generate preview" instead of auto-extracting | |
+| Manual "Generate preview" click on flagged scope | Extraction runs and the preview stays visible even if it is still over budget; if under budget, auto-extract resumes for that scope | |
+| Selection change on a flagged scope | Out-of-date preview clears and "Generate preview" appears; the Copy button is disabled until a new preview is generated | |
+| Mode switch into a previously-flagged scope | One fresh attempt: auto-extract runs once, re-flags only if still over budget | |
+| Page navigation while any scope is flagged | All slow flags cleared | |
+| Viewport mode, sustained pan on heavy board | Continuous panning does not fire mid-pan extracts (debounce outlasts 500 ms polling interval); extract runs once panning stops | |
+| Format / option toggle (any board) | Preview updates instantly from cached IR; no `EXTRACT_REQUEST` emitted | |
+| Extraction time (page / Markdown) | Completes in < 1.5 s on target hardware; no UI freeze | |
 
 #### Board D – edge cases
 
@@ -111,7 +119,7 @@ Run against a real FigJam file before any release. Mark Pass / Fail / N/A in the
 
 | Risk | Location | Severity | Status |
 |---|---|---|---|
-| Synchronous traversal on very large boards | `traverse.ts` | Low | Mitigated by the 2 000-node auto-extract guard |
+| Synchronous traversal on very large boards | `traverse.ts` | Low | Mitigated by the time-based per-scope auto-extract guard (1500 ms budget) and viewport-mode debounce that outlasts the 500 ms polling interval |
 | Stale `on()` listeners if user rapidly re-extracts | `useExtraction.ts` | Low | Each `extract()` call registers a new listener and returns a cleanup function; superseded responses are discarded via `requestId` |
 | Clipboard API unavailable in sandboxed iframe | `useClipboard.ts` | Low | `navigator.clipboard.writeText` is available; `execCommand('copy')` fallback removed (deprecated) |
 | `figma.clientStorage.getAsync` returns undefined on first run | `main.ts` | Fixed | Spread-merged over `DEFAULT_SETTINGS` |
