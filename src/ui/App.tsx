@@ -1,5 +1,5 @@
 import { h, Fragment } from 'preact'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks'
 import { Banner, Button, Divider, Toggle } from '@create-figma-plugin/ui'
 import { IconWarning16 } from '@create-figma-plugin/ui'
 import { emit, on } from '@create-figma-plugin/utilities'
@@ -7,8 +7,6 @@ import type { SelectionMode, Format, RenderOpts, PluginSettings, ExportIR, Expor
 import type {
   ClosePluginHandler,
   LoadSettingsRequestHandler,
-  NodeCountRequestHandler,
-  NodeCountResponseHandler,
   PageChangedHandler,
   ResizeWindowHandler,
   SaveSettingsHandler,
@@ -21,6 +19,7 @@ import { renderMarkdown } from './renderers/markdown'
 import { renderMarkdownAi } from './renderers/markdown-ai'
 import { renderCsv } from './renderers/csv'
 import { useExtraction } from './hooks/useExtraction'
+import { guardReducer, INITIAL_GUARD_STATE, shouldAutoExtract } from './autoExtractGuard'
 import { useClipboard } from './hooks/useClipboard'
 import { ModePicker } from './components/ModePicker'
 import { FormatPicker } from './components/FormatPicker'
@@ -129,15 +128,27 @@ const SKELETON_BADGE_WIDTHS = [72, 88, 52, 64]
 
 // ─── constants ─────────────────────────────────────────────────────────────
 
-/** Debounce delay (ms) before triggering auto-extract when inputs change. */
-const AUTO_EXTRACT_DEBOUNCE_MS = 300
-
 /**
- * If the node count in scope exceeds this threshold, skip auto-extract and
- * show a manual "Generate preview" prompt instead. Prevents debounced
- * auto-extract from blocking the single-threaded Plugin API on large boards.
+ * Debounce delay (ms) before triggering auto-extract when inputs change.
+ *
+ * Viewport mode uses a longer debounce that outlasts the sandbox's 500 ms
+ * viewport-bounds polling interval. With a shorter debounce, sustained panning
+ * fires VIEWPORT_CHANGED faster than the debounce resets, so extract runs once
+ * per poll and locks the single-threaded Plugin API during the pan. 600 ms
+ * means the debounce always resets before the next poll arrives, so extract
+ * only runs once the user stops moving the canvas.
+ *
+ * Page and selection modes receive discrete, user-driven events (no polling),
+ * so the snappier 300 ms feels responsive without thrashing.
  */
-const AUTO_EXTRACT_NODE_THRESHOLD = 2000
+const AUTO_EXTRACT_DEBOUNCE_MS: Record<SelectionMode, number> = {
+  page: 300,
+  selection: 300,
+  viewport: 600,
+}
+
+/** Temporary: log per-scope elapsed time to help calibrate AUTO_EXTRACT_BUDGET_MS. */
+const DEBUG_TIMING = true
 
 /** Fixed panel width — Figma plugin width never changes. */
 const PANEL_WIDTH = 400
@@ -187,16 +198,38 @@ export function App() {
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   /** Ref on the root element; used to measure compact content height for window resize. */
   const containerRef = useRef<HTMLDivElement>(null)
-  /** True when auto-extract was skipped because the node count exceeds AUTO_EXTRACT_NODE_THRESHOLD. */
-  const [isBoardTooLarge, setIsBoardTooLarge] = useState(false)
   /**
-   * Incremented by the SELECTION_CHANGED listener so the auto-extract effect
-   * re-runs whenever the canvas selection changes (relevant for 'selection' and
-   * 'section' modes).
+   * Slow-scope guard (see autoExtractGuard.ts). `guard.slow[mode]` suppresses
+   * auto-extract for a scope whose last extraction was over budget;
+   * `guard.awaitingManual` is true only when an auto-extract was actually
+   * skipped, and is the one thing that swaps the preview for the
+   * "Generate preview" prompt. A result already on screen is never hidden
+   * just because it was slow to produce.
+   */
+  const [guard, dispatchGuard] = useReducer(guardReducer, INITIAL_GUARD_STATE)
+  /**
+   * Incremented by SELECTION_CHANGED / VIEWPORT_CHANGED listeners so the
+   * auto-extract effect re-runs when the relevant canvas state changes.
+   * Does NOT clear slow flags (per-pan / per-selection thrash would be bad).
    */
   const [selectionRevision, setSelectionRevision] = useState(0)
 
-  const { ir, loading, error, extract } = useExtraction()
+  const { ir, loading, error, extract: runExtraction, reset: resetExtraction } = useExtraction()
+
+  /** Every extraction goes through here so a fresh result always clears the manual prompt. */
+  function extract(...args: Parameters<typeof runExtraction>) {
+    dispatchGuard({ type: 'extract-started' })
+    runExtraction(...args)
+  }
+
+  /** Records an auto/manual extraction's round trip against the budget. */
+  function recordTiming(kind: 'auto' | 'manual', scope: SelectionMode, elapsedMs: number) {
+    if (DEBUG_TIMING) {
+      // eslint-disable-next-line no-console
+      console.log(`[distiller] ${kind}-extract (${scope}): ${elapsedMs.toFixed(0)}ms`)
+    }
+    dispatchGuard({ type: 'extract-timed', mode: scope, elapsedMs })
+  }
   const { clipError, writeText } = useClipboard()
 
   // ── toast helper ──────────────────────────────────────────────────────────
@@ -240,9 +273,12 @@ export function App() {
   }, [mode])
   // ── page-change listener ────────────────────────────────────────────────────────
   // Navigating between FigJam pages does not fire selectionchange, so we
-  // listen for PAGE_CHANGED specifically and bump for the page-scoped modes.
+  // listen for PAGE_CHANGED specifically. Page navigation also clears all
+  // slow-scope flags: a new page is a new ball game, and stale per-scope
+  // backoff from the previous page shouldn't carry over.
   useEffect(() => {
     return on<PageChangedHandler>('PAGE_CHANGED', () => {
+      dispatchGuard({ type: 'page-changed' })
       if (mode === 'page' || mode === 'viewport') {
         setSelectionRevision((r) => r + 1)
       }
@@ -270,44 +306,54 @@ export function App() {
 
   // ── auto-extract (debounced) ──────────────────────────────────────────────
   //
-  // Fires whenever any extraction input changes (mode, format, settings, scope).
-  // Runs regardless of showPreview so the status header always reflects current
-  // scope — previously gated on showPreview, which left the header stale when
-  // preview was off and mode/selection changed.
+  // Fires whenever IR-affecting inputs change (mode, scope state). Format and
+  // render options are intentionally NOT deps: the renderers consume them
+  // reactively via useMemo, so toggling format / includeVotes / etc. updates
+  // the preview without re-walking the tree.
+  //
+  // Per-scope backoff: if the last extraction for this scope was over budget,
+  // the scope's slow flag suppresses auto-extract. Skipping clears the now
+  // out-of-date result (so Copy/Enter can't copy stale content) and shows the
+  // manual "Generate preview" prompt. Entering a mode (mode itself changed, not
+  // selectionRevision) grants one fresh attempt by clearing that scope's flag.
+  const prevModeRef = useRef<SelectionMode>(mode)
   useEffect(() => {
     if (!settingsReady) return
 
-    // Reset large-board flag so the preview pane stops showing the manual prompt
-    // while we re-evaluate.
-    setIsBoardTooLarge(false)
+    const modeJustChanged = prevModeRef.current !== mode
+    prevModeRef.current = mode
+
+    if (!shouldAutoExtract(guard, mode, modeJustChanged)) {
+      resetExtraction()
+      dispatchGuard({ type: 'auto-skipped' })
+      return
+    }
+    // selectionRevision bumps (pan / selection change) do NOT clear the flag.
+    if (modeJustChanged) dispatchGuard({ type: 'mode-entered', mode })
 
     let cancelled = false
 
     const timer = setTimeout(() => {
       if (cancelled) return
-
-      const offCount = on<NodeCountResponseHandler>('NODE_COUNT_RESPONSE', (count) => {
-        offCount()
-        if (cancelled) return
-        if (count > AUTO_EXTRACT_NODE_THRESHOLD) {
-          setIsBoardTooLarge(true)
-        } else if (count !== -1) {
-          // count === -1 means resolveRoots threw (e.g. no sections selected);
-          // the extraction itself will surface the error, so skip it silently here.
-          extract(mode)
-        }
-      })
-      emit<NodeCountRequestHandler>('NODE_COUNT_REQUEST', mode)
-    }, AUTO_EXTRACT_DEBOUNCE_MS)
+      extract(mode, (_ir, elapsedMs) => recordTiming('auto', mode, elapsedMs))
+    }, AUTO_EXTRACT_DEBOUNCE_MS[mode])
 
     return () => {
       cancelled = true
       clearTimeout(timer)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, format, aiOptimized, includeVotes, includeSections, includeAuthors, settingsReady, selectionRevision])
+  }, [mode, settingsReady, selectionRevision])
 
   // ── keyboard shortcuts ────────────────────────────────────────────────────
+  //
+  // The keydown listener is registered once, so it must not close over render
+  // state directly (it would keep reading the preview, format and options from
+  // whichever render registered it). Instead it calls through a ref that is
+  // pointed at this render's handlePrimaryCopy every time the component renders.
+  const primaryCopyRef = useRef(handlePrimaryCopy)
+  primaryCopyRef.current = handlePrimaryCopy
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement)?.tagName
@@ -317,7 +363,7 @@ export function App() {
         // Enter always triggers the primary Copy action.
         // In preview-on mode: copies the already-extracted output.
         // In preview-off mode: extracts then copies in one step.
-        handlePrimaryCopy()
+        primaryCopyRef.current()
       }
       if (e.key === 'Escape') {
         emit<ClosePluginHandler>('CLOSE_PLUGIN')
@@ -325,10 +371,12 @@ export function App() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, showPreview])   // re-register when mode or showPreview changes so closures are fresh
+  }, [])
 
   const opts: RenderOpts = { includeVotes, includeSections, csvExpandTables, includeAuthors, aiOptimized }
+
+  /** True when auto-extract was skipped and the user must ask for a preview. */
+  const awaitingManual = guard.awaitingManual
 
   /**
    * Single source of truth for the live extraction result.
@@ -368,7 +416,7 @@ export function App() {
       emit<ResizeWindowHandler>('RESIZE_WINDOW', { width: PANEL_WIDTH, height: clamped })
       return
     }
-    const isExpandedNow = showPreview && !isBoardTooLarge
+    const isExpandedNow = showPreview && !awaitingManual
     if (isExpandedNow) {
       emit<ResizeWindowHandler>('RESIZE_WINDOW', { width: PANEL_WIDTH, height: EXPANDED_HEIGHT })
     } else {
@@ -377,7 +425,7 @@ export function App() {
       emit<ResizeWindowHandler>('RESIZE_WINDOW', { width: PANEL_WIDTH, height: clamped })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showPreview, isBoardTooLarge, liveResult.kind, settingsReady, view])
+  }, [showPreview, awaitingManual, liveResult.kind, settingsReady, view])
 
   // ── preview-on actions (IR already exists from auto-extract) ─────────────
 
@@ -440,11 +488,13 @@ export function App() {
     }
   }
 
-  // ── manual "Generate preview" trigger (large-board guard bypass) ──────────
-
+  // ── manual "Generate preview" trigger (slow-scope guard bypass) ───────────
+  //
+  // Starting the extraction clears the prompt, and the generated preview stays
+  // on screen however long it took. The measured time only decides whether the
+  // NEXT scope change auto-extracts (under budget) or prompts again (over).
   function handleGeneratePreview() {
-    setIsBoardTooLarge(false)
-    extract(mode)
+    extract(mode, (_ir, elapsedMs) => recordTiming('manual', mode, elapsedMs))
   }
 
   // preview-off: buttons always enabled (fresh extract on click)
@@ -455,7 +505,7 @@ export function App() {
   // The large-board fallback is treated as compact even when showPreview is on,
   // since the preview text area is absent.
   // The About view is always compact — no expanded layout when browsing About.
-  const isExpanded = view === 'exporter' && showPreview && !isBoardTooLarge
+  const isExpanded = view === 'exporter' && showPreview && !awaitingManual
 
   // ── preview status dot ────────────────────────────────────────────────────
   // State derives from liveResult so it always agrees with the rest of the UI.
@@ -591,7 +641,7 @@ export function App() {
            Large-board fallback: shown when showPreview is on but the board
            exceeded the auto-extract threshold. Treated as compact (no flex-1).
       ────────────────────────────────────────────────────────────────────── */}
-      {showPreview && isBoardTooLarge && (
+      {showPreview && awaitingManual && (
         <div class="flex flex-shrink-0 flex-col gap-2 px-2 pb-3">
           <Banner icon={<IconWarning16 />} variant="warning">
             Large board — auto-preview skipped. Click to generate once.

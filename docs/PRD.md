@@ -75,7 +75,7 @@ Unsupported: images, drawings, FRAME, GROUP, CONNECTOR, WIDGET nodes, unlabeled 
 
 1. Plugin opens at 400 × ~200 px; persisted settings load from `figma.clientStorage`.
 2. If the canvas has a non-empty selection, the mode defaults to "Current selection"; otherwise "Whole page".
-3. Extraction runs automatically, debounced 300 ms, whenever mode, format, or options change. On large boards (>2 000 canvas nodes in scope) auto-extract is skipped and a "Generate preview" button is offered instead.
+3. Extraction runs automatically, debounced per mode (300 ms for page and selection; 600 ms for viewport, so sustained panning never triggers a mid-pan extract), whenever the IR-affecting inputs change. Format and option toggles re-render reactively from the cached IR and do not re-walk the tree. If a scope's last measured extraction exceeded 1500 ms, that scope is flagged and further auto-extracts for it are skipped until the user navigates pages, switches modes, or a manual Generate measures under budget. A result already on screen stays visible however long it took; only when a later change is skipped does the out-of-date result clear and a "Generate preview" button take its place.
 4. A result-zone header shows the current scope at a glance: pill badges with item counts when content is found; a quiet message when the board is empty; an error banner with a Retry button on failure. The header is always visible regardless of the preview toggle.
 5. "Show preview" toggle enables a scrollable preview text area; the window expands to 640 px.
 6. Options gear button opens a floating popover with the four content toggles. An active-state badge counts non-default options at a glance.
