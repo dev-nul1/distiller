@@ -147,9 +147,6 @@ const AUTO_EXTRACT_DEBOUNCE_MS: Record<SelectionMode, number> = {
   viewport: 600,
 }
 
-/** Temporary: log per-scope elapsed time to help calibrate AUTO_EXTRACT_BUDGET_MS. */
-const DEBUG_TIMING = true
-
 /** Fixed panel width — Figma plugin width never changes. */
 const PANEL_WIDTH = 400
 
@@ -223,11 +220,7 @@ export function App() {
   }
 
   /** Records an auto/manual extraction's round trip against the budget. */
-  function recordTiming(kind: 'auto' | 'manual', scope: SelectionMode, elapsedMs: number) {
-    if (DEBUG_TIMING) {
-      // eslint-disable-next-line no-console
-      console.log(`[distiller] ${kind}-extract (${scope}): ${elapsedMs.toFixed(0)}ms`)
-    }
+  function recordTiming(scope: SelectionMode, elapsedMs: number) {
     dispatchGuard({ type: 'extract-timed', mode: scope, elapsedMs })
   }
   const { clipError, writeText } = useClipboard()
@@ -335,7 +328,7 @@ export function App() {
 
     const timer = setTimeout(() => {
       if (cancelled) return
-      extract(mode, (_ir, elapsedMs) => recordTiming('auto', mode, elapsedMs))
+      extract(mode, (_ir, elapsedMs) => recordTiming(mode, elapsedMs))
     }, AUTO_EXTRACT_DEBOUNCE_MS[mode])
 
     return () => {
@@ -494,7 +487,7 @@ export function App() {
   // on screen however long it took. The measured time only decides whether the
   // NEXT scope change auto-extracts (under budget) or prompts again (over).
   function handleGeneratePreview() {
-    extract(mode, (_ir, elapsedMs) => recordTiming('manual', mode, elapsedMs))
+    extract(mode, (_ir, elapsedMs) => recordTiming(mode, elapsedMs))
   }
 
   // preview-off: buttons always enabled (fresh extract on click)
